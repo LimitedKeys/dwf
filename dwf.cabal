@@ -72,8 +72,8 @@ library
 
     -- Other library packages from which modules are imported.
     build-depends:    
-        base ^>=4.17.2.1,
-        bytestring >= 0.11.4
+        base,
+        bytestring
 
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -106,5 +106,5 @@ test-suite dwf-test
 
     -- Test dependencies.
     build-depends:
-        base ^>=4.17.2.1,
+        base,
         dwf
