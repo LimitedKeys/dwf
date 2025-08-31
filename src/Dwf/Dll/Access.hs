@@ -206,3 +206,12 @@ fToBool f = alloca (\a -> do
     return $ check (errorCode, cA))
     where toB :: Int -> Bool
           toB = (== 0)
+
+infoD3 :: (CInt -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> IO (CInt)) -> Int -> IO (DwfResult (Double, Double, Double))
+infoD3 f p = fToDoubleDoubleDouble (f (fromIntegral p))
+
+setD1 :: (CInt -> CDouble -> IO (CInt)) -> Int -> Double -> IO (DwfResult ())
+setD1 f p q = fCall (f (fromIntegral p) (coerce q))
+
+getD1 :: (CInt -> Ptr CDouble -> IO (CInt)) -> Int -> IO (DwfResult Double)
+getD1 f p = fToDouble (f (fromIntegral p))
