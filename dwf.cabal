@@ -65,6 +65,7 @@ library
         Dwf.Api.AnalogIn,
         Dwf.Api.AnalogOut,
         Dwf.Api.DigitalIO,
+        Dwf.Api.DigitalIn,
         Dwf.Dll.Access,
         Dwf.Dll.Wrap
 

@@ -172,7 +172,9 @@ fToIntInt f = alloca (\a -> alloca (\b -> do
     return $ check (errorCode, (cA, cB))
     ))
 
-fToIntIntInt :: (Ptr CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> IO (DwfResult (Int, Int, Int))
+fToIntIntInt :: (Storable a, Storable b, Storable c) 
+             => (Integral a, Integral b, Integral c) 
+             => (Ptr a -> Ptr b -> Ptr c -> IO CInt) -> IO (DwfResult (Int, Int, Int))
 fToIntIntInt f = alloca (\a -> alloca (\b -> alloca (\c -> do
     errorCode <- fromIntegral <$> f a b c
     cA <- fromIntegral <$> peek a
@@ -180,6 +182,18 @@ fToIntIntInt f = alloca (\a -> alloca (\b -> alloca (\c -> do
     cC <- fromIntegral <$> peek c
     return $ check (errorCode, (cA, cB, cC))
     )))
+
+fToIntIntIntInt :: (Storable a, Storable b, Storable c, Storable d) 
+             => (Integral a, Integral b, Integral c, Integral d) 
+             => (Ptr a -> Ptr b -> Ptr c -> Ptr d -> IO CInt) -> IO (DwfResult (Int, Int, Int, Int))
+fToIntIntIntInt f = alloca (\a -> alloca (\b -> alloca (\c -> alloca (\d -> do
+    errorCode <- fromIntegral <$> f a b c d
+    cA <- fromIntegral <$> peek a
+    cB <- fromIntegral <$> peek b
+    cC <- fromIntegral <$> peek c
+    cD <- fromIntegral <$> peek d
+    return $ check (errorCode, (cA, cB, cC, cD))
+    ))))
 
 fToIntArrayIN :: Int -> Int -> (Ptr CShort -> CInt -> CInt -> IO CInt) -> IO (DwfResult [Int])
 fToIntArrayIN i n f = allocaArray n (\a -> do 
@@ -211,8 +225,8 @@ fToBool f = alloca (\a -> do
 setD1 :: (CInt -> CDouble -> IO CInt) -> Int -> Double -> IO (DwfResult ())
 setD1 f p q = fCall (f (fromIntegral p) (coerce q))
 
-setI1 :: (CInt -> CInt -> IO CInt) -> Int -> Int -> IO (DwfResult ())
-setI1 f p q = fCall (f (fromIntegral p) (fromIntegral q))
+setI1 :: Storable a => Integral a => (CInt -> a -> IO CInt) -> Int -> Int -> IO (DwfResult ())
+setI1 = setI1X
 
 setUI1 :: (CInt -> CUInt -> IO CInt) -> Int -> Int -> IO (DwfResult ())
 setUI1 f p q = fCall (f (fromIntegral p) (fromIntegral q))
@@ -223,11 +237,21 @@ setI2 f p q r = fCall (f p' q' r')
           q' = fromIntegral q
           r' = fromIntegral r
 
+setI4 :: (Storable a, Storable b, Storable c, Storable d)
+      => (Integral a, Integral b, Integral c, Integral d)
+      => (CInt -> a -> b -> c -> d -> IO CInt) -> Int -> Int -> Int -> Int -> Int -> IO (DwfResult ())
+setI4 f p q r s t = fCall (f p' q' r' s' t')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = fromIntegral r
+          s' = fromIntegral s
+          t' = fromIntegral t
+
 getD1 :: (CInt -> Ptr CDouble -> IO CInt) -> Int -> IO (DwfResult Double)
 getD1 f p = fToDouble (f (fromIntegral p))
 
-getI1 :: (CInt -> Ptr CInt -> IO CInt) -> Int -> IO (DwfResult Int)
-getI1 f p = fToInt (f (fromIntegral p))
+getI1 :: Storable a => Integral a => (CInt -> Ptr a -> IO CInt) -> Int -> IO (DwfResult Int)
+getI1 = getI1X
 
 getU1 :: (CInt -> Ptr CUChar -> IO CInt) -> Int -> IO (DwfResult Int)
 getU1 f p = fToInt (f (fromIntegral p))
@@ -249,6 +273,11 @@ getD3 f p = fToDoubleDoubleDouble (f (fromIntegral p))
 
 getI3 :: (CInt -> Ptr CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> Int -> IO (DwfResult (Int, Int, Int))
 getI3 f p = fToIntIntInt (f (fromIntegral p))
+
+getI4 :: (Storable a, Storable b, Storable c, Storable d) 
+      => (Integral a, Integral b, Integral c, Integral d) 
+      => (CInt -> Ptr a -> Ptr b -> Ptr c -> Ptr d -> IO CInt) -> Int -> IO (DwfResult (Int, Int, Int, Int))
+getI4 f p = fToIntIntIntInt (f (fromIntegral p))
 
 -- Double parameter (hdwf, channel)
 
