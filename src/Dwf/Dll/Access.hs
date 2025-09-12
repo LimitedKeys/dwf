@@ -60,19 +60,18 @@ check' result = if result /= 0
 fCall :: IO CInt -> IO (DwfResult ())
 fCall f = do check' . fromIntegral <$> f
 
-fToInt :: (Ptr CInt -> IO CInt) -> IO (DwfResult Int)
+fToInt :: Storable a => Integral a => (Ptr a -> IO CInt) -> IO (DwfResult Int)
 fToInt f = alloca (\result -> do
     errorCode <- f result
     cValue <- peek result
     return $ check (fromIntegral errorCode, fromIntegral cValue)
     )
 
-fToUChar :: (Ptr CUChar -> IO CInt) -> IO (DwfResult Int)
-fToUChar f = alloca (\result -> do
-    errorCode <- f result
-    cValue <- peek result
-    return $ check (fromIntegral errorCode, fromIntegral cValue)
-    )
+getI1X :: Storable a => Integral a => (CInt -> Ptr a -> IO CInt) -> Int -> IO (DwfResult Int)
+getI1X f p = fToInt (f (fromIntegral p))
+
+setI1X :: Storable a => Integral a => (CInt -> a -> IO CInt) -> Int -> Int -> IO (DwfResult ())
+setI1X f p q = fCall (f (fromIntegral p) (fromIntegral q))
 
 _coerce :: CDouble -> Double
 _coerce = coerce
@@ -112,7 +111,7 @@ fToDoubleDoubleInt f = alloca (\a -> alloca (\b -> alloca (\c -> do
 
 fToDoubleArrayN :: Int -> (Ptr CDouble -> CInt -> IO CInt) -> IO (DwfResult [Double])
 fToDoubleArrayN n f = allocaArray n (\a -> do
-    let n' = (fromIntegral n) :: CInt 
+    let n' = fromIntegral n :: CInt 
     errorCode <- fromIntegral <$> f a n' 
     raw <- peekArray n a 
     let samples = map _coerce raw
@@ -120,8 +119,8 @@ fToDoubleArrayN n f = allocaArray n (\a -> do
 
 fToDoubleArrayIN :: Int -> Int -> (Ptr CDouble -> CInt -> CInt -> IO CInt) -> IO (DwfResult [Double])
 fToDoubleArrayIN i n f = allocaArray n (\a -> do
-    let i' = (fromIntegral i) :: CInt 
-    let n' = (fromIntegral n) :: CInt 
+    let i' = fromIntegral i :: CInt 
+    let n' = fromIntegral n :: CInt 
     errorCode <- fromIntegral <$> f a i' n' 
     raw <- peekArray n a 
     let samples = map _coerce raw
@@ -207,11 +206,128 @@ fToBool f = alloca (\a -> do
     where toB :: Int -> Bool
           toB = (== 0)
 
-infoD3 :: (CInt -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> IO (CInt)) -> Int -> IO (DwfResult (Double, Double, Double))
-infoD3 f p = fToDoubleDoubleDouble (f (fromIntegral p))
+-- Basic stuffs (single parameter)
 
-setD1 :: (CInt -> CDouble -> IO (CInt)) -> Int -> Double -> IO (DwfResult ())
+setD1 :: (CInt -> CDouble -> IO CInt) -> Int -> Double -> IO (DwfResult ())
 setD1 f p q = fCall (f (fromIntegral p) (coerce q))
 
-getD1 :: (CInt -> Ptr CDouble -> IO (CInt)) -> Int -> IO (DwfResult Double)
+setI1 :: (CInt -> CInt -> IO CInt) -> Int -> Int -> IO (DwfResult ())
+setI1 f p q = fCall (f (fromIntegral p) (fromIntegral q))
+
+setUI1 :: (CInt -> CUInt -> IO CInt) -> Int -> Int -> IO (DwfResult ())
+setUI1 f p q = fCall (f (fromIntegral p) (fromIntegral q))
+
+setI2 :: (CInt -> CInt -> CInt -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult ())
+setI2 f p q r = fCall (f p' q' r')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = fromIntegral r
+
+getD1 :: (CInt -> Ptr CDouble -> IO CInt) -> Int -> IO (DwfResult Double)
 getD1 f p = fToDouble (f (fromIntegral p))
+
+getI1 :: (CInt -> Ptr CInt -> IO CInt) -> Int -> IO (DwfResult Int)
+getI1 f p = fToInt (f (fromIntegral p))
+
+getU1 :: (CInt -> Ptr CUChar -> IO CInt) -> Int -> IO (DwfResult Int)
+getU1 f p = fToInt (f (fromIntegral p))
+
+getUI1 :: (CInt -> Ptr CUInt -> IO CInt) -> Int -> IO (DwfResult Int)
+getUI1 f p = fToInt (f (fromIntegral p))
+
+getUL1 :: (CInt -> Ptr CULong -> IO CInt) -> Int -> IO (DwfResult Int)
+getUL1 f p = fToInt (f (fromIntegral p))
+
+getD2 :: (CInt -> Ptr CDouble -> Ptr CDouble -> IO CInt) -> Int -> IO (DwfResult (Double, Double))
+getD2 f p = fToDoubleDouble (f (fromIntegral p))
+
+getI2 :: (CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> Int -> IO (DwfResult (Int, Int))
+getI2 f p = fToIntInt (f (fromIntegral p))
+
+getD3 :: (CInt -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> IO CInt) -> Int -> IO (DwfResult (Double, Double, Double))
+getD3 f p = fToDoubleDoubleDouble (f (fromIntegral p))
+
+getI3 :: (CInt -> Ptr CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> Int -> IO (DwfResult (Int, Int, Int))
+getI3 f p = fToIntIntInt (f (fromIntegral p))
+
+-- Double parameter (hdwf, channel)
+
+setChanI1 :: (CInt -> CInt -> CInt -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult ())
+setChanI1 f p q r = fCall (f (fromIntegral p) (fromIntegral q) (fromIntegral r))
+
+setChanU1 :: (CInt -> CInt -> CUChar -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult ())
+setChanU1 f p q r = fCall (f (fromIntegral p) (fromIntegral q) (fromIntegral r))
+
+setChanD1 :: (CInt -> CInt -> CDouble -> IO CInt) -> Int -> Int -> Double -> IO (DwfResult ())
+setChanD1 f p q r = fCall (f (fromIntegral p) (fromIntegral q) (coerce r))
+
+getChanI1 :: (CInt -> CInt -> Ptr CUChar -> IO CInt) -> Int -> Int -> IO (DwfResult Int)
+getChanI1 f p q = fToInt (f (fromIntegral p) (fromIntegral q))
+
+getChanD1 :: (CInt -> CInt -> Ptr CDouble -> IO CInt) -> Int -> Int -> IO (DwfResult Double)
+getChanD1 f p q = fToDouble (f (fromIntegral p) (fromIntegral q))
+
+getChanI2 :: (CInt -> CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> Int -> Int -> IO (DwfResult (Int, Int))
+getChanI2 f p q = fToIntInt (f (fromIntegral p) (fromIntegral q))
+
+getChanD2 :: (CInt -> CInt -> Ptr CDouble -> Ptr CDouble -> IO CInt) -> Int -> Int -> IO (DwfResult (Double, Double))
+getChanD2 f p q = fToDoubleDouble (f (fromIntegral p) (fromIntegral q))
+
+getChanU1 :: (CInt -> CInt -> Ptr CInt -> IO CInt) -> Int -> Int -> IO (DwfResult Int)
+getChanU1 f p q = fToInt (f (fromIntegral p) (fromIntegral q))
+
+getChanI3 :: (CInt -> CInt -> Ptr CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> Int -> Int -> IO (DwfResult (Int, Int, Int))
+getChanI3 f p q = fToIntIntInt (f (fromIntegral p) (fromIntegral q))
+
+-- Channel Node (hdwf, channel, node)
+
+setNodeI1 :: (CInt -> CInt -> CInt -> CInt -> IO CInt) -> Int -> Int -> Int -> Int -> IO (DwfResult ())
+setNodeI1 f p q r s = fCall (f p' q' r' s')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = fromIntegral r
+          s' = fromIntegral s
+
+setNodeU1 :: (CInt -> CInt -> CInt -> CUChar -> IO CInt) -> Int -> Int -> Int -> Int -> IO (DwfResult ())
+setNodeU1 f p q r s = fCall (f p' q' r' s')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = fromIntegral r
+          s' = fromIntegral s
+
+setNodeD1 :: (CInt -> CInt -> CInt -> CDouble -> IO CInt) -> Int -> Int -> Int -> Double -> IO (DwfResult ())
+setNodeD1 f p q r s = fCall (f p' q' r' s')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = fromIntegral r
+          s' = coerce s
+
+getNodeI1 :: Storable a => Integral a => (CInt -> CInt -> CInt -> Ptr a -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult Int)
+getNodeI1 f p q r = fToInt (f p' q' r')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = fromIntegral r
+
+getNodeD1 :: (CInt -> CInt -> CInt -> Ptr CDouble -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult Double)
+getNodeD1 f p q r = fToDouble (f p' q' r')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = fromIntegral r
+
+getNodeD2 :: (CInt -> CInt -> CInt -> Ptr CDouble -> Ptr CDouble -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult (Double, Double))
+getNodeD2 f p q r = fToDoubleDouble (f p' q' r')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = fromIntegral r
+
+getNodeI2 :: (CInt -> CInt -> CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult (Int, Int))
+getNodeI2 f p q r = fToIntInt (f p' q' r')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = fromIntegral r
+
+getNodeI3 :: (CInt -> CInt -> CInt -> Ptr CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult (Int, Int, Int))
+getNodeI3 f p q r = fToIntIntInt (f p' q' r')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = fromIntegral r

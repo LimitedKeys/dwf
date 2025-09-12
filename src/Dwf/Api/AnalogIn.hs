@@ -7,324 +7,330 @@ import Data.Coerce (coerce)
 import Dwf.Dll.Wrap
 import Dwf.Dll.Access
 
-analogInReset :: Int -> IO (DwfResult ())
-analogInReset p = fCall (fdwf_analog_in_reset p')
+reset :: Int -> IO (DwfResult ())
+reset p = fCall (fdwf_analog_in_reset p')
     where p' = fromIntegral p
 
-analogInConfigure :: Int -> Int -> Int -> IO (DwfResult ())
-analogInConfigure p q r = fCall (fdwf_analog_in_configure p' q' r')
-    where p' = fromIntegral p
-          q' = fromIntegral q
-          r' = fromIntegral r
-
-analogInChannelCount :: Int -> IO (DwfResult Int)
-analogInChannelCount p = fToInt (fdwf_analog_in_channel_count p')
-    where p' = fromIntegral p
-
-analogInFrequencyInfo :: Int -> IO (DwfResult (Double, Double))
-analogInFrequencyInfo p = fToDoubleDouble (fdwf_analog_in_frequency_info p')
-    where p' = fromIntegral p
-
-analogInChannelFilterInfo :: Int -> IO (DwfResult Int)
-analogInChannelFilterInfo p = fToInt (fdwf_analog_in_channel_filter_info p')
-    where p' = fromIntegral p
-
-analogInChannelFilterSet :: Int -> Int -> Int -> IO (DwfResult ())
-analogInChannelFilterSet p q r = fCall (fdwf_analog_in_channel_filter_set p' q' r')
+configure :: Int -> Int -> Int -> IO (DwfResult ())
+configure p q r = fCall (fdwf_analog_in_configure p' q' r')
     where p' = fromIntegral p
           q' = fromIntegral q
           r' = fromIntegral r
 
-analogInChannelFilterGet :: Int -> Int -> IO (DwfResult Int)
-analogInChannelFilterGet p q = fToInt (fdwf_analog_in_channel_filter_get p' q')
+channelCount :: Int -> IO (DwfResult Int)
+channelCount = getI1 fdwf_analog_in_channel_count
+
+frequencyInfo :: Int -> IO (DwfResult (Double, Double))
+frequencyInfo = getD2 fdwf_analog_in_frequency_info
+
+channelFilterInfo :: Int -> IO (DwfResult Int)
+channelFilterInfo = getI1 fdwf_analog_in_channel_filter_info
+
+channelFilterSet :: Int -> Int -> Int -> IO (DwfResult ())
+channelFilterSet = setI2 fdwf_analog_in_channel_filter_set
+
+channelFilterGet :: Int -> Int -> IO (DwfResult Int)
+channelFilterGet p q = fToInt (fdwf_analog_in_channel_filter_get p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInChannelEnableSet :: Int -> Int -> Int -> IO (DwfResult ())
-analogInChannelEnableSet p q r = fCall (fdwf_analog_in_channel_enable_set p' q' r')
-    where p' = fromIntegral p
-          q' = fromIntegral q
-          r' = fromIntegral r
+channelEnableSet :: Int -> Int -> Int -> IO (DwfResult ())
+channelEnableSet = setI2 fdwf_analog_in_channel_enable_set
 
-analogInChannelEnableGet :: Int -> Int -> IO (DwfResult Int)
-analogInChannelEnableGet p q = fToInt (fdwf_analog_in_channel_enable_get p' q')
+channelEnableGet :: Int -> Int -> IO (DwfResult Int)
+channelEnableGet p q = fToInt (fdwf_analog_in_channel_enable_get p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInAcquisitionModeSet :: Int -> Int -> IO (DwfResult ())
-analogInAcquisitionModeSet p q = fCall (fdwf_analog_in_acquisition_mode_set p' q')
+acquisitionModeSet :: Int -> Int -> IO (DwfResult ())
+acquisitionModeSet = setI1 fdwf_analog_in_acquisition_mode_set
+
+frequencySet :: Int -> Double -> IO (DwfResult ())
+frequencySet = setD1 fdwf_analog_in_frequency_set 
+
+frequencyGet :: Int -> IO (DwfResult Double)
+frequencyGet = getD1 fdwf_analog_in_frequency_get
+
+recordLengthSet :: Int -> Double -> IO (DwfResult ())
+recordLengthSet = setD1 fdwf_analog_in_record_length_set
+
+recordLengthGet :: Int -> IO (DwfResult Double)
+recordLengthGet = getD1 fdwf_analog_in_record_length_get
+
+status :: Int -> Int -> IO (DwfResult Int)
+status p q = fToInt (fdwf_analog_in_status p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInFrequencySet :: Int -> Double -> IO (DwfResult ())
-analogInFrequencySet p q = fCall (fdwf_analog_in_frequency_set p' q')
-    where p' = fromIntegral p
-          q' = coerce q :: CDouble
+statusSampleLeft :: Int -> IO (DwfResult Int)
+statusSampleLeft = getI1 fdwf_analog_in_status_samples_left 
 
-analogInFrequencyGet :: Int -> IO (DwfResult Double)
-analogInFrequencyGet p = getD1 fdwf_analog_in_frequency_get
+statusSamplesValid :: Int -> IO (DwfResult Int)
+statusSamplesValid = getI1 fdwf_analog_in_status_samples_valid
 
-analogInRecordLengthSet :: Int -> Double -> IO (DwfResult ())
-analogInRecordLengthSet p q = fCall (fdwf_analog_in_record_length_set p' q')
-    where p' = fromIntegral p
-          q' = coerce q :: CDouble
+statusIndexWrite :: Int -> IO (DwfResult Int)
+statusIndexWrite = getI1 fdwf_analog_in_status_index_write
 
-analogInRecordLengthGet :: Int -> IO (DwfResult Double)
-analogInRecordLengthGet p = getD1 fdwf_analog_in_record_length_get
+statusAutoTriggered :: Int -> IO (DwfResult Int)
+statusAutoTriggered = getI1 fdwf_analog_in_status_auto_triggered
 
-analogInStatus :: Int -> Int -> IO (DwfResult Int)
-analogInStatus p q = fToUChar (fdwf_analog_in_status p' q')
+statusData :: Int -> Int -> Int -> IO (DwfResult [Double])
+statusData p q r = fToDoubleArrayN r (fdwf_analog_in_status_data p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInStatusSampleLeft :: Int -> IO (DwfResult Int)
-analogInStatusSampleLeft p = fToInt (fdwf_analog_in_status_samples_left p')
-    where p' = fromIntegral p
-
-analogInStatusSamplesValid :: Int -> IO (DwfResult Int)
-analogInStatusSamplesValid p = fToInt (fdwf_analog_in_status_samples_valid p')
-    where p' = fromIntegral p
-
-analogInStatusIndexWrite :: Int -> IO (DwfResult Int)
-analogInStatusIndexWrite p = fToInt (fdwf_analog_in_status_index_write p')
-    where p' = fromIntegral p
-
-analogInStatusAutoTriggered :: Int -> IO (DwfResult Int)
-analogInStatusAutoTriggered p = fToInt (fdwf_analog_in_status_auto_triggered p')
-    where p' = fromIntegral p
-
-analogInStatusData :: Int -> Int -> Int -> IO (DwfResult [Double])
-analogInStatusData p q r = fToDoubleArrayN r (fdwf_analog_in_status_data p' q')
+statusData2 :: Int -> Int -> Int -> Int -> IO (DwfResult [Double])
+statusData2 p q i n = fToDoubleArrayIN i n (fdwf_analog_in_status_data2 p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInStatusData2 :: Int -> Int -> Int -> Int -> IO (DwfResult [Double])
-analogInStatusData2 p q i n = fToDoubleArrayIN i n (fdwf_analog_in_status_data2 p' q')
+statusData16 :: Int -> Int -> Int -> Int -> IO (DwfResult [Int])
+statusData16 p q i n = fToIntArrayIN i n (fdwf_analog_in_status_data16 p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInStatusData16 :: Int -> Int -> Int -> Int -> IO (DwfResult [Int])
-analogInStatusData16 p q i n = fToIntArrayIN i n (fdwf_analog_in_status_data16 p' q')
+statusNoise :: Int -> Int -> Int -> IO (DwfResult [(Double, Double)])
+statusNoise p q n = fTo2DoubleArrayN n (fdwf_analog_in_status_noise p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInStatusNoise :: Int -> Int -> Int -> IO (DwfResult [(Double, Double)])
-analogInStatusNoise p q n = fTo2DoubleArrayN n (fdwf_analog_in_status_noise p' q')
+statusNoise2 :: Int -> Int -> Int -> Int -> IO (DwfResult [(Double, Double)])
+statusNoise2 p q i n = fTo2DoubleArrayIN i n (fdwf_analog_in_status_noise2 p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInStatusNoise2 :: Int -> Int -> Int -> Int -> IO (DwfResult [(Double, Double)])
-analogInStatusNoise2 p q i n = fTo2DoubleArrayIN i n (fdwf_analog_in_status_noise2 p' q')
+statusSample :: Int -> Int -> IO (DwfResult Double)
+statusSample p q = fToDouble (fdwf_analog_in_status_sample p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInStatusSample :: Int -> Int -> IO (DwfResult Double)
-analogInStatusSample p q = fToDouble (fdwf_analog_in_status_sample p' q')
+statusTime :: Int -> IO (DwfResult (Int, Int, Int))
+statusTime = getI3 fdwf_analog_in_status_time
+
+statusRecord :: Int -> IO (DwfResult (Int, Int, Int))
+statusRecord = getI3 fdwf_analog_in_status_record
+
+bitsInfo :: Int -> IO (DwfResult Int)
+bitsInfo = getI1 fdwf_analog_in_bits_info
+
+bufferSizeInfo :: Int -> IO (DwfResult (Int, Int))
+bufferSizeInfo = getI2 fdwf_analog_in_buffer_size_info
+
+bufferSizeGet :: Int -> IO (DwfResult Int)
+bufferSizeGet = getI1 fdwf_analog_in_buffer_size_get
+
+bufferSizeSet :: Int -> Int -> IO (DwfResult ())
+bufferSizeSet = setI1 fdwf_analog_in_buffer_size_set
+
+noiseSizeInfo :: Int -> IO (DwfResult Int)
+noiseSizeInfo = getI1 fdwf_analog_in_noise_size_info
+
+noiseSizeSet :: Int -> Int -> IO (DwfResult ())
+noiseSizeSet p q = fCall (fdwf_analog_in_noise_size_set p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInStatusTime :: Int -> IO (DwfResult (Int, Int, Int))
-analogInStatusTime p = fToIntIntInt (fdwf_analog_in_status_time p')
+acquisitionModeInfo :: Int -> IO (DwfResult Int)
+acquisitionModeInfo p = fToInt (fdwf_analog_in_acquisition_mode_info $ fromIntegral p)
+
+acquisitionModeGet :: Int -> IO (DwfResult Int)
+acquisitionModeGet p = fToInt (fdwf_analog_in_acquisition_mode_get $ fromIntegral p)
+
+channelRangeInfo :: Int -> IO (DwfResult (Double, Double, Double))
+channelRangeInfo = getD3 fdwf_analog_in_channel_range_info
+
+channelRangeSteps :: Int -> IO (DwfResult [Double])
+channelRangeSteps p = fToIntDoubleArray32 (fdwf_analog_in_channel_range_steps p')
     where p' = fromIntegral p
 
-analogInStatusRecord :: Int -> IO (DwfResult (Int, Int, Int))
-analogInStatusRecord p = fToIntIntInt (fdwf_analog_in_status_record p')
-    where p' = fromIntegral p
-
-analogInBitsInfo :: Int -> IO (DwfResult Int)
-analogInBitsInfo p = fToInt (fdwf_analog_in_bits_info $ fromIntegral p)
-
-analogInBufferSizeInfo :: Int -> IO (DwfResult (Int, Int))
-analogInBufferSizeInfo p = fToIntInt (fdwf_analog_in_buffer_size_info $ fromIntegral p)
-
-analogInBufferSizeGet :: Int -> IO (DwfResult Int)
-analogInBufferSizeGet p = fToInt (fdwf_analog_in_buffer_size_get $ fromIntegral p)
-
-analogInBufferSizeSet :: Int -> Int -> IO (DwfResult ())
-analogInBufferSizeSet p q = fCall (fdwf_analog_in_buffer_size_set p' q')
+channelRangeGet :: Int -> Int -> IO (DwfResult Double)
+channelRangeGet p q = fToDouble (fdwf_analog_in_channel_range_get p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInNoiseSizeInfo :: Int -> IO (DwfResult Int)
-analogInNoiseSizeInfo p = fToInt (fdwf_analog_in_noise_size_info $ fromIntegral p)
-
-analogInNoiseSizeSet :: Int -> Int -> IO (DwfResult ())
-analogInNoiseSizeSet p q = fCall (fdwf_analog_in_noise_size_set p' q')
-    where p' = fromIntegral p
-          q' = fromIntegral q
-
-analogInAcquisitionModeInfo :: Int -> IO (DwfResult Int)
-analogInAcquisitionModeInfo p = fToInt (fdwf_analog_in_acquisition_mode_info $ fromIntegral p)
-
-analogInAcquisitionModeGet :: Int -> IO (DwfResult Int)
-analogInAcquisitionModeGet p = fToInt (fdwf_analog_in_acquisition_mode_get $ fromIntegral p)
-
-analogInChannelRangeInfo :: Int -> IO (DwfResult (Double, Double, Double))
-analogInChannelRangeInfo = infoD3 fdwf_analog_in_channel_range_info
-
-analogInChannelRangeSteps :: Int -> IO (DwfResult [Double])
-analogInChannelRangeSteps p = fToIntDoubleArray32 (fdwf_analog_in_channel_range_steps p')
-    where p' = fromIntegral p
-
-analogInChannelRangeGet :: Int -> Int -> IO (DwfResult Double)
-analogInChannelRangeGet p q = fToDouble (fdwf_analog_in_channel_range_get p' q')
-    where p' = fromIntegral p
-          q' = fromIntegral q
-
-analogInChannelRangeSet :: Int -> Int -> Double -> IO (DwfResult ())
-analogInChannelRangeSet p q r = fCall (fdwf_analog_in_channel_range_set p' q' r')
+channelRangeSet :: Int -> Int -> Double -> IO (DwfResult ())
+channelRangeSet p q r = fCall (fdwf_analog_in_channel_range_set p' q' r')
     where p' = fromIntegral p
           q' = fromIntegral q
           r' = coerce r
 
-analogInChannelOffsetInfo :: Int -> IO (DwfResult (Double, Double, Double))
-analogInChannelOffsetInfo = infoD3 fdwf_analog_in_channel_offset_info
+channelOffsetInfo :: Int -> IO (DwfResult (Double, Double, Double))
+channelOffsetInfo = getD3 fdwf_analog_in_channel_offset_info
 
-analogInChannelOffsetGet :: Int -> Int -> IO (DwfResult Double)
-analogInChannelOffsetGet p q = fToDouble (fdwf_analog_in_channel_offset_get p' q')
+channelOffsetGet :: Int -> Int -> IO (DwfResult Double)
+channelOffsetGet p q = fToDouble (fdwf_analog_in_channel_offset_get p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInChannelOffsetSet :: Int -> Int -> Double -> IO (DwfResult ())
-analogInChannelOffsetSet p q r = fCall (fdwf_analog_in_channel_offset_set p' q' r')
-    where p' = fromIntegral p
-          q' = fromIntegral q
-          r' = coerce r
-
-analogInChannelAttenuationSet :: Int -> Int -> Double -> IO (DwfResult ())
-analogInChannelAttenuationSet p q r = fCall (fdwf_analog_in_channel_attenuation_set p' q' r')
+channelOffsetSet :: Int -> Int -> Double -> IO (DwfResult ())
+channelOffsetSet p q r = fCall (fdwf_analog_in_channel_offset_set p' q' r')
     where p' = fromIntegral p
           q' = fromIntegral q
           r' = coerce r
 
-analogInChannelAttenuationGet :: Int -> Int -> IO (DwfResult Double)
-analogInChannelAttenuationGet p q = fToDouble (fdwf_analog_in_channel_attenuation_get p' q')
-    where p' = fromIntegral p
-          q' = fromIntegral q
-
-analogInChannelBandwidthSet :: Int -> Int -> Double -> IO (DwfResult ())
-analogInChannelBandwidthSet p q r = fCall (fdwf_analog_in_channel_bandwidth_set p' q' r')
+channelAttenuationSet :: Int -> Int -> Double -> IO (DwfResult ())
+channelAttenuationSet p q r = fCall (fdwf_analog_in_channel_attenuation_set p' q' r')
     where p' = fromIntegral p
           q' = fromIntegral q
           r' = coerce r
 
-analogInChannelBandwidthGet :: Int -> Int -> IO (DwfResult Double)
-analogInChannelBandwidthGet p q = fToDouble (fdwf_analog_in_channel_bandwidth_get p' q')
+channelAttenuationGet :: Int -> Int -> IO (DwfResult Double)
+channelAttenuationGet p q = fToDouble (fdwf_analog_in_channel_attenuation_get p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInChannelImpedanceSet :: Int -> Int -> Double -> IO (DwfResult ())
-analogInChannelImpedanceSet p q r = fCall (fdwf_analog_in_channel_impedance_set p' q' r')
+channelBandwidthSet :: Int -> Int -> Double -> IO (DwfResult ())
+channelBandwidthSet p q r = fCall (fdwf_analog_in_channel_bandwidth_set p' q' r')
     where p' = fromIntegral p
           q' = fromIntegral q
           r' = coerce r
 
-analogInChannelImpedanceGet :: Int -> Int -> IO (DwfResult Double)
-analogInChannelImpedanceGet p q = fToDouble (fdwf_analog_in_channel_impedance_get p' q')
+channelBandwidthGet :: Int -> Int -> IO (DwfResult Double)
+channelBandwidthGet p q = fToDouble (fdwf_analog_in_channel_bandwidth_get p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInTriggerSourceSet :: Int -> Int -> IO (DwfResult ())
-analogInTriggerSourceSet p q = fCall (fdwf_analog_in_trigger_source_set p' q')
+channelImpedanceSet :: Int -> Int -> Double -> IO (DwfResult ())
+channelImpedanceSet p q r = fCall (fdwf_analog_in_channel_impedance_set p' q' r')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = coerce r
+
+channelImpedanceGet :: Int -> Int -> IO (DwfResult Double)
+channelImpedanceGet p q = fToDouble (fdwf_analog_in_channel_impedance_get p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInTriggerSourceGet :: Int -> IO (DwfResult Int)
-analogInTriggerSourceGet p = fToUChar (fdwf_analog_in_trigger_source_get (fromIntegral p))
-
-analogInTriggerPositionInfo :: Int -> IO (DwfResult (Double, Double, Double))
-analogInTriggerPositionInfo p = infoD3 fdwf_analog_in_trigger_position_info
-
-analogInTriggerPositionSet :: Int -> Double -> IO (DwfResult ())
-analogInTriggerPositionSet p q = fCall (fdwf_analog_in_trigger_position_set p' q')
-    where p' = fromIntegral p
-          q' = coerce q
-
-analogInTriggerPositionGet :: Int -> IO (DwfResult Double)
-analogInTriggerPositionGet p = getD1 fdwf_analog_in_trigger_position_get
-
-analogInTriggerPositionStatus :: Int -> IO (DwfResult Double)
-analogInTriggerPositionStatus p = getD1 fdwf_analog_in_trigger_position_status
-
-analogInTriggerAutoTimeoutInfo :: Int -> IO (DwfResult (Double, Double, Double))
-analogInTriggerAutoTimeoutInfo p = infoD3 fdwf_analog_in_trigger_auto_timeout_info
-
-analogInTriggerAutoTimeoutSet :: Int -> Double -> IO (DwfResult ())
-analogInTriggerAutoTimeoutSet p q = fCall (fdwf_analog_in_trigger_auto_timeout_set p' q')
-    where p' = fromIntegral p
-          q' = coerce q
-
-analogInTriggerAutoTimeoutGet :: Int -> IO (DwfResult Double)
-analogInTriggerAutoTimeoutGet p = getD1 fdwf_analog_in_trigger_auto_timeout_get
-
-analogInTriggerHoldOffInfo :: Int -> IO (DwfResult (Double, Double, Double))
-analogInTriggerHoldOffInfo p = infoD3 fdwf_analog_in_trigger_hold_off_info
-
-analogInTriggerHoldOffSet :: Int -> Double -> IO (DwfResult ())
-analogInTriggerHoldOffSet p q = fCall (fdwf_analog_in_trigger_hold_off_set p' q')
-    where p' = fromIntegral p
-          q' = coerce q
-
-analogInTriggerHoldOffGet :: Int -> IO (DwfResult Double)
-analogInTriggerHoldOffGet p = fToDouble (fdwf_analog_in_trigger_hold_off_get (fromIntegral p))
-
-analogInTriggerTypeInfo :: Int -> IO (DwfResult Int)
-analogInTriggerTypeInfo p = fToInt (fdwf_analog_in_trigger_type_info (fromIntegral p))
-
-analogInTriggerTypeSet :: Int -> Int -> IO (DwfResult ())
-analogInTriggerTypeSet p q = fCall (fdwf_analog_in_trigger_type_set p' q')
+triggerSourceSet :: Int -> Int -> IO (DwfResult ())
+triggerSourceSet p q = fCall (fdwf_analog_in_trigger_source_set p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInTriggerTypeGet :: Int -> IO (DwfResult Int)
-analogInTriggerTypeGet p = fToInt (fdwf_analog_in_trigger_type_get (fromIntegral p))
+triggerSourceGet :: Int -> IO (DwfResult Int)
+triggerSourceGet p = fToInt (fdwf_analog_in_trigger_source_get (fromIntegral p))
 
-analogInTriggerChannelInfo :: Int -> IO (DwfResult (Int, Int))
-analogInTriggerChannelInfo p = fToIntInt (fdwf_analog_in_trigger_channel_info (fromIntegral p))
+triggerPositionInfo :: Int -> IO (DwfResult (Double, Double, Double))
+triggerPositionInfo = getD3 fdwf_analog_in_trigger_position_info
 
-analogInTriggerChannelSet :: Int -> Int -> IO (DwfResult ())
-analogInTriggerChannelSet p q = fCall (fdwf_analog_in_trigger_channel_set p' q')
+triggerPositionSet :: Int -> Double -> IO (DwfResult ())
+triggerPositionSet = setD1 fdwf_analog_in_trigger_position_set
+
+triggerPositionGet :: Int -> IO (DwfResult Double)
+triggerPositionGet = getD1 fdwf_analog_in_trigger_position_get
+
+triggerPositionStatus :: Int -> IO (DwfResult Double)
+triggerPositionStatus = getD1 fdwf_analog_in_trigger_position_status
+
+triggerAutoTimeoutInfo :: Int -> IO (DwfResult (Double, Double, Double))
+triggerAutoTimeoutInfo = getD3 fdwf_analog_in_trigger_auto_timeout_info
+
+triggerAutoTimeoutSet :: Int -> Double -> IO (DwfResult ())
+triggerAutoTimeoutSet = setD1 fdwf_analog_in_trigger_auto_timeout_set
+
+triggerAutoTimeoutGet :: Int -> IO (DwfResult Double)
+triggerAutoTimeoutGet = getD1 fdwf_analog_in_trigger_auto_timeout_get
+
+triggerHoldOffInfo :: Int -> IO (DwfResult (Double, Double, Double))
+triggerHoldOffInfo = getD3 fdwf_analog_in_trigger_hold_off_info
+
+triggerHoldOffSet :: Int -> Double -> IO (DwfResult ())
+triggerHoldOffSet = setD1 fdwf_analog_in_trigger_hold_off_set
+
+triggerHoldOffGet :: Int -> IO (DwfResult Double)
+triggerHoldOffGet = getD1 fdwf_analog_in_trigger_hold_off_get
+
+triggerTypeInfo :: Int -> IO (DwfResult Int)
+triggerTypeInfo = getI1 fdwf_analog_in_trigger_type_info
+
+triggerTypeSet :: Int -> Int -> IO (DwfResult ())
+triggerTypeSet p q = fCall (fdwf_analog_in_trigger_type_set p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInTriggerChannelGet :: Int -> IO (DwfResult Int)
-analogInTriggerChannelGet p = fToInt (fdwf_analog_in_trigger_channel_get (fromIntegral p))
+triggerTypeGet :: Int -> IO (DwfResult Int)
+triggerTypeGet = getI1 fdwf_analog_in_trigger_type_get
 
-analogInTriggerFilterInfo :: Int -> IO (DwfResult (Int, Int))
-analogInTriggerFilterInfo p = fToIntInt (fdwf_analog_in_trigger_filter_info (fromIntegral p))
+triggerChannelInfo :: Int -> IO (DwfResult (Int, Int))
+triggerChannelInfo = getI2 fdwf_analog_in_trigger_channel_info
 
-analogInTriggerFilterSet :: Int -> Int -> IO (DwfResult ())
-analogInTriggerFilterSet p q = fCall (fdwf_analog_in_trigger_filter_set p' q')
+triggerChannelSet :: Int -> Int -> IO (DwfResult ())
+triggerChannelSet p q = fCall (fdwf_analog_in_trigger_channel_set p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-analogInTriggerFilterGet :: Int -> IO (DwfResult Int)
-analogInTriggerFilterGet p = fToInt (fdwf_analog_in_trigger_filter_get (fromIntegral p))
+triggerChannelGet :: Int -> IO (DwfResult Int)
+triggerChannelGet = getI1 fdwf_analog_in_trigger_channel_get
 
-analogInTriggerLevelInfo :: Int -> IO (DwfResult (Double, Double, Double))
-analogInTriggerLevelInfo p = infoD3 fdwf_analog_in_trigger_level_info
+triggerFilterInfo :: Int -> IO (DwfResult Int)
+triggerFilterInfo = getI1 fdwf_analog_in_trigger_filter_info
 
-analogInTriggerLevelSet :: Int -> Double -> IO (DwfResult ())
-analogInTriggerLevelSet p q = fCall (fdwf_analog_in_trigger_level_set p' q')
+triggerFilterSet :: Int -> Int -> IO (DwfResult ())
+triggerFilterSet = setI1 fdwf_analog_in_trigger_filter_set
+
+triggerFilterGet :: Int -> IO (DwfResult Int)
+triggerFilterGet = getI1 fdwf_analog_in_trigger_filter_get
+
+triggerLevelInfo :: Int -> IO (DwfResult (Double, Double, Double))
+triggerLevelInfo = getD3 fdwf_analog_in_trigger_level_info
+
+triggerLevelSet :: Int -> Double -> IO (DwfResult ())
+triggerLevelSet = setD1 fdwf_analog_in_trigger_level_set
+
+triggerLevelGet :: Int -> IO (DwfResult Double)
+triggerLevelGet = getD1 fdwf_analog_in_trigger_level_get
+
+triggerHysteresisInfo :: Int -> IO (DwfResult (Double, Double, Double))
+triggerHysteresisInfo = getD3 fdwf_analog_in_trigger_hysteresis_info
+
+triggerHysteresisSet :: Int -> Double -> IO (DwfResult ())
+triggerHysteresisSet = setD1 fdwf_analog_in_trigger_hysteresis_set
+
+triggerHysteresisGet :: Int -> IO (DwfResult Double)
+triggerHysteresisGet = getD1 fdwf_analog_in_trigger_hysteresis_get
+
+triggerConditionInfo :: Int -> IO (DwfResult Int)
+triggerConditionInfo = getI1 fdwf_analog_in_trigger_condition_info
+
+triggerConditionSet :: Int -> Int -> IO (DwfResult ())
+triggerConditionSet = setI1 fdwf_analog_in_trigger_condition_set
+
+triggerConditionGet :: Int -> IO (DwfResult Int)
+triggerConditionGet = getI1 fdwf_analog_in_trigger_condition_get
+
+-- triggerLengthInfo / Set / Get
+triggerLengthInfo :: Int -> IO (DwfResult (Double, Double, Double))
+triggerLengthInfo = getD3 fdwf_analog_in_trigger_length_info 
+
+triggerLengthSet :: Int -> Double -> IO (DwfResult ())
+triggerLengthSet = setD1 fdwf_analog_in_trigger_length_set 
+
+triggerLengthGet :: Int -> IO (DwfResult Double)
+triggerLengthGet = getD1 fdwf_analog_in_trigger_length_get 
+
+-- triggerLengthConditionInfo / Set / Get
+triggerLengthConditionInfo :: Int -> IO (DwfResult Int)
+triggerLengthConditionInfo = getI1 fdwf_analog_in_trigger_length_condition_info
+
+triggerLengthConditionSet :: Int -> Int -> IO (DwfResult ())
+triggerLengthConditionSet = setI1 fdwf_analog_in_trigger_length_condition_set
+
+triggerLengthConditionGet :: Int -> IO (DwfResult Int)
+triggerLengthConditionGet = getI1 fdwf_analog_in_trigger_length_condition_get
+
+samplingSourceSet :: Int -> Int -> IO (DwfResult ())
+samplingSourceSet p q = fCall (fdwf_analog_in_sampling_source_set p' q')
     where p' = fromIntegral p
-          q' = coerce q
+          q' = fromIntegral q
 
-analogInTriggerLevelGet :: Int -> IO (DwfResult Double)
-analogInTriggerLevelGet p = fToDouble (fdwf_analog_in_trigger_level_get (fromIntegral p))
-
-analogInTriggerHysteresisInfo :: Int -> IO (DwfResult (Double, Double, Double))
-analogInTriggerHysteresisInfo p = infoD3 fdwf_analog_in_trigger_hysteresis_info
-
-analogInTriggerHysteresisSet :: Int -> Double -> IO (DwfResult ())
-analogInTriggerHysteresisSet p q = fCall (fdwf_analog_in_trigger_hysteresis_set p' q')
+samplingSourceGet :: Int -> IO (DwfResult Int)
+samplingSourceGet p = fToInt (fdwf_analog_in_sampling_source_get p')
     where p' = fromIntegral p
-          q' = coerce q
 
-analogInTriggerHysteresisGet :: Int -> IO (DwfResult Double)
-analogInTriggerHysteresisGet p = fToDouble (fdwf_analog_in_trigger_hysteresis_get (fromIntegral p))
+samplingDelaySet :: Int -> Int -> IO (DwfResult ())
+samplingDelaySet p q = fCall (fdwf_analog_in_sampling_delay_set p' q')
+    where p' = fromIntegral p
+          q' = fromIntegral q
 
-analogInTriggerConditionInfo / Set / Get
-analogInTriggerLengthInfo / Set / Get
-analogInTriggerLengthConditionInfo / Set / Get
-analogInSamplingSourceSet / Get 
-analogInSamplingDelaySet / Get 
+samplingDelayGet :: Int -> IO (DwfResult Double)
+samplingDelayGet = getD1 fdwf_analog_in_sampling_delay_get
+

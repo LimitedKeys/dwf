@@ -13,13 +13,13 @@ getLastErrorMsg = fToStringN 512 fdwf_get_last_error_msg
 getVersion :: IO (DwfResult String)
 getVersion = fToStringN 32 fdwf_get_version 
 
-paramSet :: Int -> Int -> IO (DwfResult ())
-paramSet p q = fCall (fdwf_param_set p' q')
+sessionParamSet :: Int -> Int -> IO (DwfResult ())
+sessionParamSet p q = fCall (fdwf_param_set p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-paramGet :: Int -> IO (DwfResult Int)
-paramGet p = fToInt (fdwf_param_get p')
+sessionParamGet :: Int -> IO (DwfResult Int)
+sessionParamGet p = fToInt (fdwf_param_get p')
     where p' = fromIntegral p
 
 -- Get Number of connected devices after Filtering
@@ -58,48 +58,47 @@ enumerateConfigInfo p q = fToInt (fdwf_enum_config_info p' q')
           q' = fromIntegral q
 
 -- Open the specified device and return the HDWF Access number
-deviceOpen :: Int -> IO (DwfResult Int)
-deviceOpen p = fToInt (fdwf_device_open p')
+open :: Int -> IO (DwfResult Int)
+open p = fToInt (fdwf_device_open p')
     where p' = fromIntegral p
 
-deviceConfigOpen :: Int -> Int -> IO (DwfResult Int)
-deviceConfigOpen p q = fToInt (fdwf_device_config_open p' q')
-    where p' = fromIntegral p
-          q' = fromIntegral q
-
-deviceClose :: Int -> IO (DwfResult ())
-deviceClose p = fCall (fdwf_device_close p')
-    where p' = fromIntegral p
-
-deviceCloseAll :: IO (DwfResult ())
-deviceCloseAll = fCall fdwf_device_close_all 
-
-deviceAutoConfigureSet :: Int -> Int -> IO (DwfResult ())
-deviceAutoConfigureSet p q = fCall (fdwf_device_auto_configure_set p' q')
+configOpen :: Int -> Int -> IO (DwfResult Int)
+configOpen p q = fToInt (fdwf_device_config_open p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-deviceAutoConfigureGet :: Int -> IO (DwfResult Int)
-deviceAutoConfigureGet p = fToInt (fdwf_device_auto_configure_get p')
+close :: Int -> IO (DwfResult ())
+close p = fCall (fdwf_device_close p')
     where p' = fromIntegral p
 
-deviceReset :: Int -> IO (DwfResult ())
-deviceReset p = fCall (fdwf_device_reset p')
-    where p' = fromIntegral p
+closeAll :: IO (DwfResult ())
+closeAll = fCall fdwf_device_close_all 
 
-deviceEnableSet :: Int -> Int -> IO (DwfResult ())
-deviceEnableSet p q = fCall (fdwf_device_enable_set p' q')
+autoConfigureSet :: Int -> Int -> IO (DwfResult ())
+autoConfigureSet p q = fCall (fdwf_device_auto_configure_set p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
 
-deviceParamSet :: Int -> Int -> Int -> IO (DwfResult ())
-deviceParamSet p q r = fCall (fdwf_device_param_set p' q' r')
+autoConfigureGet :: Int -> IO (DwfResult Int)
+autoConfigureGet p = fToInt (fdwf_device_auto_configure_get p')
+    where p' = fromIntegral p
+
+reset :: Int -> IO (DwfResult ())
+reset p = fCall (fdwf_device_reset p')
+    where p' = fromIntegral p
+
+enableSet :: Int -> Int -> IO (DwfResult ())
+enableSet p q = fCall (fdwf_device_enable_set p' q')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+
+paramSet :: Int -> Int -> Int -> IO (DwfResult ())
+paramSet p q r = fCall (fdwf_device_param_set p' q' r')
     where p' = fromIntegral p
           q' = fromIntegral q
           r' = fromIntegral r
 
-deviceParamGet :: Int -> Int -> IO (DwfResult Int)
-deviceParamGet p q = fToInt (fdwf_device_param_get p' q')
+paramGet :: Int -> Int -> IO (DwfResult Int)
+paramGet p q = fToInt (fdwf_device_param_get p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
-
