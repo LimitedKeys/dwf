@@ -164,7 +164,9 @@ fTo2StringN n m f = allocaBytes n (\rawA -> allocaBytes m (\rawB -> do
     return $ check (fromIntegral errorCode, (cMsg1, cMsg2))
     ))
 
-fToIntInt :: (Ptr CInt -> Ptr CInt -> IO CInt) -> IO (DwfResult (Int, Int))
+fToIntInt :: (Storable a, Storable b)
+          => (Integral a, Integral b)
+          => (Ptr a -> Ptr b -> IO CInt) -> IO (DwfResult (Int, Int))
 fToIntInt f = alloca (\a -> alloca (\b -> do
     errorCode <- fromIntegral <$> f a b
     cA <- fromIntegral <$> peek a
@@ -265,7 +267,9 @@ getUL1 f p = fToInt (f (fromIntegral p))
 getD2 :: (CInt -> Ptr CDouble -> Ptr CDouble -> IO CInt) -> Int -> IO (DwfResult (Double, Double))
 getD2 f p = fToDoubleDouble (f (fromIntegral p))
 
-getI2 :: (CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> Int -> IO (DwfResult (Int, Int))
+getI2 :: (Storable a, Storable b) 
+      => (Integral a, Integral b)
+      => (CInt -> Ptr a -> Ptr b -> IO CInt) -> Int -> IO (DwfResult (Int, Int))
 getI2 f p = fToIntInt (f (fromIntegral p))
 
 getD3 :: (CInt -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> IO CInt) -> Int -> IO (DwfResult (Double, Double, Double))
