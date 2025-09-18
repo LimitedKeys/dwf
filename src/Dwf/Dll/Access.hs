@@ -267,9 +267,9 @@ getUL1 f p = fToInt (f (fromIntegral p))
 getD2 :: (CInt -> Ptr CDouble -> Ptr CDouble -> IO CInt) -> Int -> IO (DwfResult (Double, Double))
 getD2 f p = fToDoubleDouble (f (fromIntegral p))
 
-getI2 :: (Storable a, Storable b) 
-      => (Integral a, Integral b)
-      => (CInt -> Ptr a -> Ptr b -> IO CInt) -> Int -> IO (DwfResult (Int, Int))
+getI2 :: (Storable a, Storable b, Storable c) 
+      => (Integral a, Integral b, Integral c)
+      => (a -> Ptr b -> Ptr c -> IO CInt) -> Int -> IO (DwfResult (Int, Int))
 getI2 f p = fToIntInt (f (fromIntegral p))
 
 getD3 :: (CInt -> Ptr CDouble -> Ptr CDouble -> Ptr CDouble -> IO CInt) -> Int -> IO (DwfResult (Double, Double, Double))
@@ -285,7 +285,10 @@ getI4 f p = fToIntIntIntInt (f (fromIntegral p))
 
 -- Double parameter (hdwf, channel)
 
-setChanI1 :: (CInt -> CInt -> CInt -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult ())
+setChanI1 :: (Storable a, Integral a)
+          => (Storable b, Integral b)
+          => (Storable c, Integral c)
+          => (a -> b -> c -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult ())
 setChanI1 f p q r = fCall (f (fromIntegral p) (fromIntegral q) (fromIntegral r))
 
 setChanU1 :: (CInt -> CInt -> CUChar -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult ())
@@ -294,13 +297,20 @@ setChanU1 f p q r = fCall (f (fromIntegral p) (fromIntegral q) (fromIntegral r))
 setChanD1 :: (CInt -> CInt -> CDouble -> IO CInt) -> Int -> Int -> Double -> IO (DwfResult ())
 setChanD1 f p q r = fCall (f (fromIntegral p) (fromIntegral q) (coerce r))
 
-getChanI1 :: (CInt -> CInt -> Ptr CUChar -> IO CInt) -> Int -> Int -> IO (DwfResult Int)
+getChanI1 :: (Storable a, Integral a) 
+          => (Storable b, Integral b)
+          => (Storable c, Integral c)
+          => (a -> b -> Ptr c -> IO CInt) -> Int -> Int -> IO (DwfResult Int)
 getChanI1 f p q = fToInt (f (fromIntegral p) (fromIntegral q))
 
 getChanD1 :: (CInt -> CInt -> Ptr CDouble -> IO CInt) -> Int -> Int -> IO (DwfResult Double)
 getChanD1 f p q = fToDouble (f (fromIntegral p) (fromIntegral q))
 
-getChanI2 :: (CInt -> CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> Int -> Int -> IO (DwfResult (Int, Int))
+getChanI2 :: (Storable a, Integral a)
+          => (Storable b, Integral b)
+          => (Storable c, Integral c)
+          => (Storable d, Integral d)
+          => (a -> b -> Ptr c -> Ptr d -> IO CInt) -> Int -> Int -> IO (DwfResult (Int, Int))
 getChanI2 f p q = fToIntInt (f (fromIntegral p) (fromIntegral q))
 
 getChanD2 :: (CInt -> CInt -> Ptr CDouble -> Ptr CDouble -> IO CInt) -> Int -> Int -> IO (DwfResult (Double, Double))
