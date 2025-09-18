@@ -4,6 +4,18 @@ module Dwf.Api.Device where
 import Dwf.Dll.Wrap
 import Dwf.Dll.Access
 
+import Control.Exception (bracket)
+
+-- Custom APIs
+
+with :: Int -> (Int -> IO (DwfResult a)) -> IO (DwfResult a)
+with deviceId = bracket doOpen close
+    where doOpen = do 
+            result <- open deviceId
+            return $ fromResult result
+
+-- API Accessors
+
 getLastError :: IO (DwfResult Int)
 getLastError = fToInt fdwf_get_last_error
 

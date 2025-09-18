@@ -48,14 +48,14 @@ fromResult (DwfError x) = error $ "Cannot decode DwfError (" <> show x <> ") int
 fromResult (DwfResult x) = x 
 
 check :: (Int, a) -> DwfResult a
-check (result, value) = if result /= 1 
-    then DwfError result
-    else DwfResult value
+check (result, value) = if result == 1
+    then DwfResult value
+    else DwfError result
 
 check' :: Int -> DwfResult ()
-check' result = if result /= 1
-    then DwfError result
-    else DwfNone
+check' result = if result == 1
+    then DwfNone
+    else DwfError result
 
 fCall :: IO CInt -> IO (DwfResult ())
 fCall f = do check' . fromIntegral <$> f
