@@ -115,3 +115,11 @@ test-suite dwf-test
     build-depends:
         base,
         dwf
+
+-- Examples 
+
+executable version 
+    main-is: version.hs
+    build-depends: base, dwf
+    hs-source-dirs: examples/
+    default-language: Haskell2010
