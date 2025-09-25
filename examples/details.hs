@@ -4,12 +4,11 @@ module Main where
 import Text.Printf (printf)
 import Dwf.Info
 
-deviceInfo :: Int -> IO ()
-deviceInfo n = mapM_ info [0..(n-1)]
-
 main :: IO ()
 main = do
     devices <- list
     if devices <= 0
     then printf "No Devices Connected\n"
-    else deviceInfo devices
+    else do 
+        info 0
+        details 0
