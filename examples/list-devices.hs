@@ -10,14 +10,14 @@ info :: Int -> IO ()
 info i = do
     name <- fromResult <$> Device.enumerateDeviceName i
     serial <- fromResult <$> Device.enumerateSerialNumber i
-    putStrLn (name <> " : " <> serial)
+    putStrLn (show i <> ": " <> name <> " (" <> serial <> ")")
 
-devices :: Int -> IO ()
-devices n = mapM_ info [0..(n-1)]
+deviceInfo :: Int -> IO ()
+deviceInfo n = mapM_ info [0..(n-1)]
 
 main :: IO ()
 main = do
     devices <- fromResult <$> Device.enumerate 0
     if devices <= 0
     then printf "No Devices Connected\n"
-    else info devices
+    else deviceInfo devices

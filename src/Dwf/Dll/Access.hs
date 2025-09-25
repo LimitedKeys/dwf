@@ -48,9 +48,9 @@ fromResult (DwfError x) = error $ "Cannot decode DwfError (" <> show x <> ") int
 fromResult (DwfResult x) = x 
 
 check :: (Int, a) -> DwfResult a
-check (result, value) = if result == 1
-    then DwfResult value
-    else DwfError result
+check (result, value) 
+    | result == 1 = DwfResult value
+    | otherwise   = DwfError result
 
 check' :: Int -> DwfResult ()
 check' result = if result == 1
