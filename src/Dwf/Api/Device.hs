@@ -114,3 +114,19 @@ paramGet :: Int -> Int -> IO (DwfResult Int)
 paramGet p q = fToInt (fdwf_device_param_get p' q')
     where p' = fromIntegral p
           q' = fromIntegral q
+
+triggerInfo :: Int -> IO (DwfResult Int)
+triggerInfo = getI1 fdwf_device_trigger_info
+
+triggerSet :: Int -> Int -> Int -> IO (DwfResult ())
+triggerSet = setChanI1 fdwf_device_trigger_set
+
+triggerGet :: Int -> Int -> IO (DwfResult Int)
+triggerGet = getChanI1 fdwf_device_trigger_get
+
+triggerSlopeInfo :: Int -> IO (DwfResult Int)
+triggerSlopeInfo = getI1 fdwf_device_trigger_slope_info
+
+triggerPC :: Int -> IO (DwfResult ())
+triggerPC p = fCall (fdwf_device_trigger_pc p')
+    where p' = fromIntegral p

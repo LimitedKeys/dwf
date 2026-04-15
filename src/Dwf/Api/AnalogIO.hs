@@ -62,7 +62,16 @@ channelNodeInfo p q r = fToInt (fdwf_analog_io_channel_node_info p' q' r')
           r' = fromIntegral r
 
 channelNodeSetInfo :: Int -> Int -> Int -> IO (DwfResult (Double, Double, Int))
-channelNodeSetInfo p q r = fToDoubleDoubleInt (fdwf_analog_io_channel_node_set_info p' q' r')
-    where p' = fromIntegral p
-          q' = fromIntegral q
-          r' = fromIntegral r
+channelNodeSetInfo = getNodeDDI fdwf_analog_io_channel_node_set_info
+
+channelNodeSet :: Int -> Int -> Int -> Double -> IO (DwfResult ())
+channelNodeSet = setNodeD1 fdwf_analog_io_channel_node_set
+
+channelNodeGet :: Int -> Int -> Int -> IO (DwfResult Double)
+channelNodeGet = getNodeD1 fdwf_analog_io_channel_node_get
+
+channelNodeStatusInfo :: Int -> Int -> Int -> IO (DwfResult (Double, Double, Int))
+channelNodeStatusInfo = getNodeDDI fdwf_analog_io_channel_node_status_info
+
+channelNodeStatus :: Int -> Int -> Int -> IO (DwfResult Double)
+channelNodeStatus = getNodeD1 fdwf_analog_io_channel_node_status

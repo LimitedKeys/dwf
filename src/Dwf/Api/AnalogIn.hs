@@ -1,4 +1,3 @@
-
 module Dwf.Api.AnalogIn where
 
 import Foreign.C.Types
@@ -6,6 +5,129 @@ import Data.Coerce (coerce)
 
 import Dwf.Dll.Wrap
 import Dwf.Dll.Access
+
+-- ---------------------------------------------------------------------------
+-- AnalogInChannelConfig — per-channel settings
+-- ---------------------------------------------------------------------------
+
+data AnalogInChannelConfig = AnalogInChannelConfig
+    { ainChEnable      :: Bool     -- enable this channel
+    , ainChRange       :: Double   -- voltage range in V (e.g. 5.0 = ±5 V)
+    , ainChOffset      :: Double   -- DC offset in V
+    , ainChAttenuation :: Double   -- probe attenuation factor (1.0 = 1x)
+    , ainChFilter      :: Int      -- 0=decimate, 1=average, 2=minmax
+    } deriving (Eq, Show)
+
+defaultAnalogInChannelConfig :: AnalogInChannelConfig
+defaultAnalogInChannelConfig = AnalogInChannelConfig
+    { ainChEnable      = True
+    , ainChRange       = 5.0    -- ±5 V
+    , ainChOffset      = 0.0
+    , ainChAttenuation = 1.0    -- 1x probe
+    , ainChFilter      = 0      -- decimate
+    }
+
+-- ---------------------------------------------------------------------------
+-- AnalogInTriggerConfig — trigger settings
+-- ---------------------------------------------------------------------------
+
+data AnalogInTriggerConfig = AnalogInTriggerConfig
+    { ainTrigSource      :: Int     -- trigger source (0=none/auto, 1=PC, ...)
+    , ainTrigType        :: Int     -- 0=edge, 1=pulse, 2=transition, ...
+    , ainTrigChannel     :: Int     -- channel index to trigger on
+    , ainTrigLevel       :: Double  -- trigger threshold in V
+    , ainTrigHysteresis  :: Double  -- hysteresis in V
+    , ainTrigCondition   :: Int     -- 0=rising, 1=falling, 2=either
+    , ainTrigPosition    :: Double  -- pre-trigger time in seconds
+    , ainTrigAutoTimeout :: Double  -- auto-trigger timeout in seconds; 0=off
+    } deriving (Eq, Show)
+
+defaultAnalogInTriggerConfig :: AnalogInTriggerConfig
+defaultAnalogInTriggerConfig = AnalogInTriggerConfig
+    { ainTrigSource      = 0    -- none/auto — trigger immediately
+    , ainTrigType        = 0    -- edge
+    , ainTrigChannel     = 0
+    , ainTrigLevel       = 0.0
+    , ainTrigHysteresis  = 0.0
+    , ainTrigCondition   = 0    -- rising
+    , ainTrigPosition    = 0.0
+    , ainTrigAutoTimeout = 0.0  -- off
+    }
+
+-- ---------------------------------------------------------------------------
+-- AnalogInConfig — top-level acquisition configuration
+-- ---------------------------------------------------------------------------
+
+data AnalogInConfig = AnalogInConfig
+    { ainFrequency    :: Double                   -- sample rate in Hz
+    , ainBufferSize   :: Int                      -- samples per acquisition
+    , ainAcqMode      :: Int                      -- 0=single, 1=scan-shift, 2=scan-screen, 3=record
+    , ainRecordLength :: Double                   -- record duration in seconds (record mode only)
+    , ainChannels     :: [AnalogInChannelConfig]  -- one entry per channel, indexed from 0
+    , ainTrigger      :: AnalogInTriggerConfig
+    } deriving (Eq, Show)
+
+-- | Default config for a two-channel device (e.g. Analog Discovery).
+-- Both channels enabled at ±5 V, 1 MHz sample rate, 4096-sample buffer,
+-- single-shot acquisition, immediate trigger.
+defaultAnalogInConfig :: AnalogInConfig
+defaultAnalogInConfig = AnalogInConfig
+    { ainFrequency    = 1000000.0   -- 1 MHz
+    , ainBufferSize   = 4096
+    , ainAcqMode      = 0           -- single
+    , ainRecordLength = 0.0
+    , ainChannels     = [ defaultAnalogInChannelConfig
+                        , defaultAnalogInChannelConfig ]
+    , ainTrigger      = defaultAnalogInTriggerConfig
+    }
+
+-- ---------------------------------------------------------------------------
+-- Setup helpers
+-- ---------------------------------------------------------------------------
+
+-- | Apply the settings for one channel. The channel index is passed separately
+-- so this can also be called independently of 'setup'.
+applyChannel :: Int -> Int -> AnalogInChannelConfig -> IO (DwfResult ())
+applyChannel hdwf i ch = do
+    r1 <- channelEnableSet      hdwf i (if ainChEnable ch then 1 else 0)
+    r2 <- channelRangeSet       hdwf i (ainChRange ch)
+    r3 <- channelOffsetSet      hdwf i (ainChOffset ch)
+    r4 <- channelAttenuationSet hdwf i (ainChAttenuation ch)
+    r5 <- channelFilterSet      hdwf i (ainChFilter ch)
+    return $ r1 *> r2 *> r3 *> r4 *> r5
+
+-- | Apply all trigger settings. Can also be called independently of 'setup'.
+applyTrigger :: Int -> AnalogInTriggerConfig -> IO (DwfResult ())
+applyTrigger hdwf trig = do
+    r1 <- triggerSourceSet      hdwf (ainTrigSource trig)
+    r2 <- triggerTypeSet        hdwf (ainTrigType trig)
+    r3 <- triggerChannelSet     hdwf (ainTrigChannel trig)
+    r4 <- triggerLevelSet       hdwf (ainTrigLevel trig)
+    r5 <- triggerHysteresisSet  hdwf (ainTrigHysteresis trig)
+    r6 <- triggerConditionSet   hdwf (ainTrigCondition trig)
+    r7 <- triggerPositionSet    hdwf (ainTrigPosition trig)
+    r8 <- triggerAutoTimeoutSet hdwf (ainTrigAutoTimeout trig)
+    return $ r1 *> r2 *> r3 *> r4 *> r5 *> r6 *> r7 *> r8
+
+-- | Apply all fields of an AnalogInConfig to the device.
+-- Returns the first error encountered, or DwfResult () if all succeed.
+-- Note: this is named 'setup' rather than 'configure' because 'configure'
+-- already exists in this module as the primitive that starts acquisition
+-- (FDwfAnalogInConfigure).
+setup :: Int -> AnalogInConfig -> IO (DwfResult ())
+setup hdwf cfg = do
+    r0   <- reset              hdwf
+    r1   <- frequencySet       hdwf (ainFrequency cfg)
+    r2   <- bufferSizeSet      hdwf (ainBufferSize cfg)
+    r3   <- acquisitionModeSet hdwf (ainAcqMode cfg)
+    r4   <- recordLengthSet    hdwf (ainRecordLength cfg)
+    chRs <- mapM (\(i, ch) -> applyChannel hdwf i ch) (zip [0..] (ainChannels cfg))
+    tR   <- applyTrigger hdwf (ainTrigger cfg)
+    return $ r0 *> r1 *> r2 *> r3 *> r4 *> foldr (*>) tR chRs
+
+-- ---------------------------------------------------------------------------
+-- Primitives
+-- ---------------------------------------------------------------------------
 
 reset :: Int -> IO (DwfResult ())
 reset p = fCall (fdwf_analog_in_reset p')
@@ -105,7 +227,7 @@ statusSample p q = fToDouble (fdwf_analog_in_status_sample p' q')
           q' = fromIntegral q
 
 statusTime :: Int -> IO (DwfResult (Int, Int, Int))
-statusTime = getI3 fdwf_analog_in_status_time
+statusTime = getUI3 fdwf_analog_in_status_time
 
 statusRecord :: Int -> IO (DwfResult (Int, Int, Int))
 statusRecord = getI3 fdwf_analog_in_status_record

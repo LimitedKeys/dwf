@@ -152,8 +152,8 @@ foreign import capi "dwf.h FDwfAnalogOutNodeEnableSet"
 foreign import capi "dwf.h FDwfAnalogOutNodeEnableGet"
     fdwf_analog_out_node_enable_get :: CInt -> CInt -> CInt -> Ptr CInt -> IO CInt
 
-foreign import capi "dwf.h FDwfAnalogOutNodeFunctionInfo" 
-    fdwf_analog_out_node_function_info :: CInt -> CInt -> CInt -> Ptr CInt -> IO CInt
+foreign import capi "dwf.h FDwfAnalogOutNodeFunctionInfo"
+    fdwf_analog_out_node_function_info :: CInt -> CInt -> CInt -> Ptr CUInt -> IO CInt
 foreign import capi "dwf.h FDwfAnalogOutNodeFunctionSet" 
     fdwf_analog_out_node_function_set :: CInt -> CInt -> CInt -> CUChar -> IO CInt
 foreign import capi "dwf.h FDwfAnalogOutNodeFunctionGet" 
@@ -243,7 +243,7 @@ foreign import capi "dwf.h FDwfAnalogInStatusNoise2"
 foreign import capi "dwf.h FDwfAnalogInStatusSample"
     fdwf_analog_in_status_sample :: CInt -> CInt -> Ptr CDouble -> IO CInt
 foreign import capi "dwf.h FDwfAnalogInStatusTime"
-    fdwf_analog_in_status_time :: CInt -> Ptr CInt -> Ptr CInt -> Ptr CInt -> IO CInt
+    fdwf_analog_in_status_time :: CInt -> Ptr CUInt -> Ptr CUInt -> Ptr CUInt -> IO CInt
 
 foreign import capi "dwf.h FDwfAnalogInStatusRecord"
     fdwf_analog_in_status_record :: CInt -> Ptr CInt -> Ptr CInt -> Ptr CInt -> IO CInt
@@ -549,7 +549,7 @@ foreign import capi "dwf.h FDwfDigitalInDividerSet"
 foreign import capi "dwf.h FDwfDigitalInDividerGet"
     fdwf_digital_in_divider_get :: CInt -> Ptr CUInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalInBitsInfo"
-    fdwf_digital_in_bits_info :: CInt -> Ptr CUInt -> IO CInt
+    fdwf_digital_in_bits_info :: CInt -> Ptr CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalInSampleFormatSet"
     fdwf_digital_in_sample_format_set :: CInt -> CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalInSampleFormatGet"
@@ -701,7 +701,7 @@ foreign import capi "dwf.h FDwfDigitalOutCounterInfo"
 foreign import capi "dwf.h FDwfDigitalOutCounterInitSet"
     fdwf_digital_out_counter_init_set :: CInt -> CInt -> CUInt -> CUInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalOutCounterInitGet"
-    fdwf_digital_out_counter_init_get :: CInt -> CInt -> Ptr CUInt -> Ptr CUInt -> IO CInt
+    fdwf_digital_out_counter_init_get :: CInt -> CInt -> Ptr CInt -> Ptr CUInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalOutCounterSet"
     fdwf_digital_out_counter_set :: CInt -> CInt -> CUInt -> CUInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalOutCounterGet"
@@ -732,9 +732,9 @@ foreign import capi "dwf.h FDwfDigitalUartTxSet"
 foreign import capi "dwf.h FDwfDigitalUartRxSet"
     fdwf_digital_uart_rx_set :: CInt -> CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalUartTx"
-    fdwf_digital_uart_tx :: CInt -> Ptr CUChar -> CInt -> IO CInt
+    fdwf_digital_uart_tx :: CInt -> Ptr CChar -> CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalUartRx"
-    fdwf_digital_uart_rx :: CInt -> Ptr CUChar -> CInt -> Ptr CInt -> Ptr CInt -> IO CInt
+    fdwf_digital_uart_rx :: CInt -> Ptr CChar -> CInt -> Ptr CInt -> Ptr CInt -> IO CInt
 
 -- SPI
 
@@ -754,6 +754,8 @@ foreign import capi "dwf.h FDwfDigitalSpiOrderSet"
     fdwf_digital_spi_order_set :: CInt -> CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalSpiDelaySet"
     fdwf_digital_spi_delay_set :: CInt -> CInt -> CInt -> CInt -> CInt -> IO CInt
+foreign import capi "dwf.h FDwfDigitalSpiDutySet"
+    fdwf_digital_spi_duty_set :: CInt -> CInt -> IO CInt
 
 foreign import capi "dwf.h FDwfDigitalSpiSelectSet"
     fdwf_digital_spi_select_set :: CInt -> CInt -> CInt -> IO CInt
@@ -786,27 +788,27 @@ foreign import capi "dwf.h FDwfDigitalSpiWrite32"
     fdwf_digital_spi_write32 :: CInt -> CInt -> CInt -> Ptr CUInt -> CInt -> IO CInt
 
 foreign import capi "dwf.h FDwfDigitalSpiCmdWriteRead"
-    fdwf_digital_spi_cmd_write_read :: CInt -> CInt -> CUChar -> CInt -> CInt -> CInt -> Ptr CUChar -> CInt -> Ptr CUChar -> CInt -> IO CInt
+    fdwf_digital_spi_cmd_write_read :: CInt -> CInt -> CUInt -> CInt -> CInt -> CInt -> Ptr CUChar -> CInt -> Ptr CUChar -> CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalSpiCmdWriteRead16"
-    fdwf_digital_spi_cmd_write_read16 :: CInt -> CInt -> CUChar -> CInt -> CInt -> CInt -> Ptr CUShort -> CInt -> Ptr CUShort -> CInt -> IO CInt
+    fdwf_digital_spi_cmd_write_read16 :: CInt -> CInt -> CUInt -> CInt -> CInt -> CInt -> Ptr CUShort -> CInt -> Ptr CUShort -> CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalSpiCmdWriteRead32"
-    fdwf_digital_spi_cmd_write_read32 :: CInt -> CInt -> CUChar -> CInt -> CInt -> CInt -> Ptr CUInt -> CInt -> Ptr CUInt -> CInt -> IO CInt
+    fdwf_digital_spi_cmd_write_read32 :: CInt -> CInt -> CUInt -> CInt -> CInt -> CInt -> Ptr CUInt -> CInt -> Ptr CUInt -> CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalSpiCmdWriteOne"
-    fdwf_digital_spi_cmd_write_one :: CInt -> CInt -> CUChar -> CInt -> CInt -> CInt -> CUInt -> IO CInt
+    fdwf_digital_spi_cmd_write_one :: CInt -> CInt -> CUInt -> CInt -> CInt -> CInt -> CUInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalSpiCmdWrite"
-    fdwf_digital_spi_cmd_write :: CInt -> CInt -> CUChar -> CInt -> CInt -> CInt -> Ptr CUChar -> CInt -> IO CInt
+    fdwf_digital_spi_cmd_write :: CInt -> CInt -> CUInt -> CInt -> CInt -> CInt -> Ptr CUChar -> CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalSpiCmdWrite16"
-    fdwf_digital_spi_cmd_write16 :: CInt -> CInt -> CUChar -> CInt -> CInt -> CInt -> Ptr CUShort -> CInt -> IO CInt
+    fdwf_digital_spi_cmd_write16 :: CInt -> CInt -> CUInt -> CInt -> CInt -> CInt -> Ptr CUShort -> CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalSpiCmdWrite32"
-    fdwf_digital_spi_cmd_write32 :: CInt -> CInt -> CUChar -> CInt -> CInt -> CInt -> Ptr CUInt -> CInt -> IO CInt
+    fdwf_digital_spi_cmd_write32 :: CInt -> CInt -> CUInt -> CInt -> CInt -> CInt -> Ptr CUInt -> CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalSpiCmdReadOne"
-    fdwf_digital_spi_cmd_read_one :: CInt -> CInt -> CUChar -> CInt -> CInt -> CInt -> Ptr CUInt -> IO CInt
+    fdwf_digital_spi_cmd_read_one :: CInt -> CInt -> CUInt -> CInt -> CInt -> CInt -> Ptr CUInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalSpiCmdRead"
-    fdwf_digital_spi_cmd_read :: CInt -> CInt -> CUChar -> CInt -> CInt -> CInt -> Ptr CUChar -> CInt -> IO CInt
+    fdwf_digital_spi_cmd_read :: CInt -> CInt -> CUInt -> CInt -> CInt -> CInt -> Ptr CUChar -> CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalSpiCmdRead16"
-    fdwf_digital_spi_cmd_read16 :: CInt -> CInt -> CUChar -> CInt -> CInt -> CInt -> Ptr CUShort -> CInt -> IO CInt
+    fdwf_digital_spi_cmd_read16 :: CInt -> CInt -> CUInt -> CInt -> CInt -> CInt -> Ptr CUShort -> CInt -> IO CInt
 foreign import capi "dwf.h FDwfDigitalSpiCmdRead32"
-    fdwf_digital_spi_cmd_read32 :: CInt -> CInt -> CUChar -> CInt -> CInt -> CInt -> Ptr CUInt -> CInt -> IO CInt
+    fdwf_digital_spi_cmd_read32 :: CInt -> CInt -> CUInt -> CInt -> CInt -> CInt -> Ptr CUInt -> CInt -> IO CInt
 
 -- I2C
 foreign import capi "dwf.h FDwfDigitalI2cReset"

@@ -1,14 +1,43 @@
-
 module Dwf.Api.DigitalUart where
 
-import Foreign
-import Foreign.C.Types
-
+import Data.List (nub)
 import qualified Data.ByteString as B
-import qualified Data.Word as DW
 
 import Dwf.Dll.Wrap
 import Dwf.Dll.Access
+
+-- ---------------------------------------------------------------------------
+-- UartConfig — full bus configuration as a pure value
+-- ---------------------------------------------------------------------------
+
+data UartConfig = UartConfig
+    { uartBaudRate :: Double   -- baud rate in bps
+    , uartBits     :: Int      -- data bits (typically 8)
+    , uartParity   :: Int      -- 0=none, 1=odd, 2=even
+    , uartStop     :: Double   -- stop bits (1.0 or 2.0)
+    , uartTxPin    :: Int      -- DIO pin for TX
+    , uartRxPin    :: Int      -- DIO pin for RX
+    } deriving (Eq, Show)
+
+defaultUartConfig :: UartConfig
+defaultUartConfig = UartConfig
+    { uartBaudRate = 9600
+    , uartBits     = 8
+    , uartParity   = 0     -- none
+    , uartStop     = 1.0
+    , uartTxPin    = 0
+    , uartRxPin    = 1
+    }
+
+-- | Returns True if all pin assignments are distinct.
+-- Use this to validate a 'UartConfig' before passing it to 'configure'.
+configPinsDistinct :: UartConfig -> Bool
+configPinsDistinct cfg = length pins == length (nub pins)
+  where pins = [uartTxPin cfg, uartRxPin cfg]
+
+-- ---------------------------------------------------------------------------
+-- Configuration
+-- ---------------------------------------------------------------------------
 
 reset :: Int -> IO (DwfResult ())
 reset p = fCall $ fdwf_digital_uart_reset (fromIntegral p)
@@ -31,33 +60,24 @@ txSet = setI1 fdwf_digital_uart_tx_set
 rxSet :: Int -> Int -> IO (DwfResult ())
 rxSet = setI1 fdwf_digital_uart_rx_set
 
+-- | Apply all fields of a UartConfig to the device in one call.
+-- Returns the first error encountered, or DwfResult () if all succeed.
+-- Precondition: 'configPinsDistinct' cfg — TX and RX must be on different pins.
+configure :: Int -> UartConfig -> IO (DwfResult ())
+configure hdwf cfg = do
+    r1 <- reset    hdwf
+    r2 <- rateSet  hdwf (uartBaudRate cfg)
+    r3 <- bitsSet  hdwf (uartBits cfg)
+    r4 <- paritySet hdwf (uartParity cfg)
+    r5 <- stopSet  hdwf (uartStop cfg)
+    r6 <- txSet    hdwf (uartTxPin cfg)
+    r7 <- rxSet    hdwf (uartRxPin cfg)
+    return $ r1 *> r2 *> r3 *> r4 *> r5 *> r6 *> r7
+
 tx :: Int -> B.ByteString -> IO (DwfResult ())
-tx = _tx fdwf_digital_uart_tx
+tx hdwf bs = fArrayWrite (B.unpack bs) (fdwf_digital_uart_tx (fromIntegral hdwf))
 
 rx :: Int -> Int -> IO (DwfResult (Int, Int, B.ByteString))
-rx = _rx fdwf_digital_uart_rx
-
-_tx :: (CInt -> Ptr CUChar -> CInt -> IO CInt) -> Int -> B.ByteString -> IO (DwfResult ())
-_tx f p q = withArrayLen q' (\values_len values -> do
-        error_code <- f p' values (fromIntegral values_len)
-        return (check' (fromIntegral error_code))
-    )
-    where p' = fromIntegral p
-          q' = map _conv (B.unpack q)
-          _conv a = toEnum $ fromEnum a 
-
-_rx :: (CInt -> Ptr CUChar -> CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> Int -> Int -> IO (DwfResult (Int, Int, B.ByteString))
-_rx f p q = allocaBytes q (\buffer -> alloca (\received -> alloca (\parity -> do
-        error_code <- f p' buffer q' received parity
-        r <- fmap fromIntegral (peek received)
-        e <- fmap fromIntegral (peek parity)
-
-        values <- peekArray q (castPtr buffer) :: IO [CUChar]
-
-        let x = map (\a -> toEnum (fromEnum a) :: DW.Word8) values
-        let bs = B.pack x
-
-        return $ check (fromIntegral error_code, (r, e, bs))
-    )))
-    where p' = fromIntegral p
-          q' = fromIntegral q
+rx hdwf n = do
+    result <- fArrayReadII n (fdwf_digital_uart_rx (fromIntegral hdwf))
+    return $ fmap (\(r, e, xs) -> (r, e, B.pack xs)) result

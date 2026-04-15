@@ -1,14 +1,7 @@
 
 module Main where
 
-import Text.Printf (printf)
-import Dwf.Info
+import Dwf
 
 main :: IO ()
-main = do
-    devices <- list
-    if devices <= 0
-    then printf "No Devices Connected\n"
-    else do 
-        info 0
-        details 0
+main = info 3

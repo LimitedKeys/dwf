@@ -59,8 +59,8 @@ library
     import:           warnings
 
     -- Modules exported by the library.
-    exposed-modules:  
-        Dwf.Info,
+    exposed-modules:
+        Dwf,
         Dwf.Api.Device,
         Dwf.Api.AnalogIO,
         Dwf.Api.AnalogIn,
@@ -69,6 +69,10 @@ library
         Dwf.Api.DigitalIn,
         Dwf.Api.DigitalOut,
         Dwf.Api.DigitalUart,
+        Dwf.Api.DigitalSpi,
+        Dwf.Api.DigitalI2c,
+        Dwf.Api.DigitalSwd,
+        Dwf.Api.DigitalCan,
         Dwf.Dll.Access,
         Dwf.Dll.Wrap
 
@@ -86,9 +90,15 @@ library
     -- Directories containing source files.
     hs-source-dirs:   src
 
-    -- Base language which the package is written in.
+    default-language: Haskell2010
+
     extra-libraries: dwf
-    include-dirs: /usr/include/digilent/waveforms
+
+    if os(windows)
+        include-dirs: C:\PROGRA~1\Digilent\WaveFormsSDK\inc
+        extra-lib-dirs: C:\PROGRA~1\Digilent\WaveFormsSDK\lib\x64
+    else
+        include-dirs: /usr/include/digilent/waveforms
 
 test-suite dwf-test
     -- Import common warning flags.
@@ -98,7 +108,15 @@ test-suite dwf-test
     default-language: Haskell2010
 
     -- Modules included in this executable, other than Main.
-    -- other-modules:
+    other-modules:
+        AccessHelpersTest,
+        SpiTypesTest,
+        ProtocolTypesTest,
+        AnalogOutTypesTest,
+        DigitalOutTypesTest,
+        AcquisitionTypesTest,
+        DeviceTest,
+        DwfTest
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -115,7 +133,8 @@ test-suite dwf-test
     -- Test dependencies.
     build-depends:
         base,
-        dwf
+        dwf,
+        QuickCheck
 
 -- Examples 
 
@@ -137,3 +156,45 @@ executable details
     import: exe
     default-language: Haskell2010
     main-is: details.hs
+
+executable analog-out-sine
+    import: exe
+    default-language: Haskell2010
+    main-is: analog-out-sine.hs
+
+executable digital-out-pwm
+    import: exe
+    default-language: Haskell2010
+    main-is: digital-out-pwm.hs
+
+executable analog-in-capture
+    import: exe
+    default-language: Haskell2010
+    main-is: analog-in-capture.hs
+
+executable digital-in-trigger
+    import: exe
+    default-language: Haskell2010
+    main-is: digital-in-trigger.hs
+
+executable digital-io
+    import: exe
+    default-language: Haskell2010
+    main-is: digital-io.hs
+
+executable digital-uart-loopback
+    import: exe
+    default-language: Haskell2010
+    main-is: digital-uart-loopback.hs
+    build-depends: bytestring
+
+executable digital-i2c-scan
+    import: exe
+    default-language: Haskell2010
+    main-is: digital-i2c-scan.hs
+    build-depends: bytestring
+
+executable digital-spi-loopback
+    import: exe
+    default-language: Haskell2010
+    main-is: digital-spi-loopback.hs

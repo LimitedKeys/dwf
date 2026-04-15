@@ -9,7 +9,8 @@ import Data.Coerce (coerce)
 
 data DwfResult a = DwfResult a
     | DwfError Int
-    | DwfNone 
+    | DwfNone
+    deriving (Eq, Show)
 
 instance Functor DwfResult where
     fmap f (DwfResult x) = DwfResult (f x)
@@ -132,7 +133,7 @@ fTo2DoubleArrayN n f = allocaArray n (\a -> allocaArray n (\b -> do
     errorCode <- fromIntegral <$> f a b n'
     rawA <- peekArray n a
     let samplesA = map _coerce rawA
-    rawB <- peekArray n a
+    rawB <- peekArray n b
     let samplesB = map _coerce rawB
     return $ check (errorCode, zip samplesA samplesB)
     ))
@@ -144,7 +145,7 @@ fTo2DoubleArrayIN i n f = allocaArray n (\a -> allocaArray n (\b -> do
     errorCode <- fromIntegral <$> f a b i' n'
     rawA <- peekArray n a
     let samplesA = map _coerce rawA
-    rawB <- peekArray n a
+    rawB <- peekArray n b
     let samplesB = map _coerce rawB
     return $ check (errorCode, zip samplesA samplesB)
     ))
@@ -214,13 +215,128 @@ fToIntDoubleArray32 f = alloca (\n -> allocaArray 32 (\a -> do
     let samples = map _coerce raw
     return $ check (errorCode, samples)))
 
+-- | Write an array: convert [b] to [a], call f with (buf, count).
+fArrayWrite :: (Storable a, Integral a, Integral b)
+            => [b] -> (Ptr a -> CInt -> IO CInt) -> IO (DwfResult ())
+fArrayWrite xs f = withArrayLen (map fromIntegral xs) $ \n buf ->
+    fCall $ f buf (fromIntegral n)
+
+-- | Read an array: allocate n-element buffer, call f with (buf, count), return elements.
+fArrayRead :: (Storable a, Integral a, Integral b)
+           => Int -> (Ptr a -> CInt -> IO CInt) -> IO (DwfResult [b])
+fArrayRead n f = allocaArray n $ \buf -> do
+    ec <- fromIntegral <$> f buf (fromIntegral n)
+    xs <- peekArray n buf
+    return $ check (ec, map fromIntegral xs)
+
+-- | Full-duplex array: write [b] and read rxCount elements in one call.
+fArrayWriteRead :: (Storable a, Integral a, Integral b)
+                => [b] -> Int -> (Ptr a -> CInt -> Ptr a -> CInt -> IO CInt) -> IO (DwfResult [b])
+fArrayWriteRead txData rxCount f =
+    withArrayLen (map fromIntegral txData) $ \txLen txBuf ->
+    allocaArray rxCount $ \rxBuf -> do
+        ec <- fromIntegral <$> f txBuf (fromIntegral txLen) rxBuf (fromIntegral rxCount)
+        xs <- peekArray rxCount rxBuf
+        return $ check (ec, map fromIntegral xs)
+
+-- | Write an array and return an extra Int output (e.g. NAK/ACK flag).
+fArrayWriteI :: (Storable a, Integral a, Integral b)
+             => [b] -> (Ptr a -> CInt -> Ptr CInt -> IO CInt) -> IO (DwfResult Int)
+fArrayWriteI xs f = withArrayLen (map fromIntegral xs) $ \n buf ->
+    alloca $ \out -> do
+        ec <- fromIntegral <$> f buf (fromIntegral n) out
+        v  <- fromIntegral <$> peek out
+        return $ check (ec, v)
+
+-- | Read an array and return an extra Int output (e.g. NAK/ACK flag).
+-- Returns (extra, elements).
+fArrayReadI :: (Storable a, Integral a, Integral b)
+            => Int -> (Ptr a -> CInt -> Ptr CInt -> IO CInt) -> IO (DwfResult (Int, [b]))
+fArrayReadI n f = allocaArray n $ \buf ->
+    alloca $ \out -> do
+        ec <- fromIntegral <$> f buf (fromIntegral n) out
+        xs <- peekArray n buf
+        v  <- fromIntegral <$> peek out
+        return $ check (ec, (v, map fromIntegral xs))
+
+-- | Read an array and return two extra Int outputs (e.g. received count and
+-- parity error count). Returns (out1, out2, elements).
+fArrayReadII :: (Storable a, Integral a, Integral b)
+             => Int
+             -> (Ptr a -> CInt -> Ptr CInt -> Ptr CInt -> IO CInt)
+             -> IO (DwfResult (Int, Int, [b]))
+fArrayReadII n f = allocaArray n $ \buf ->
+    alloca $ \out1 ->
+    alloca $ \out2 -> do
+        ec <- fromIntegral <$> f buf (fromIntegral n) out1 out2
+        v1 <- fromIntegral <$> peek out1
+        v2 <- fromIntegral <$> peek out2
+        xs <- map fromIntegral <$> peekArray v1 buf
+        return $ check (ec, (v1, v2, xs))
+
+-- | Full-duplex array with extra Int output (e.g. NAK/ACK flag).
+-- Returns (extra, rx elements).
+fArrayWriteReadI :: (Storable a, Integral a, Integral b)
+                 => [b] -> Int -> (Ptr a -> CInt -> Ptr a -> CInt -> Ptr CInt -> IO CInt) -> IO (DwfResult (Int, [b]))
+fArrayWriteReadI txData rxCount f =
+    withArrayLen (map fromIntegral txData) $ \txLen txBuf ->
+    allocaArray rxCount $ \rxBuf ->
+    alloca $ \out -> do
+        ec <- fromIntegral <$> f txBuf (fromIntegral txLen) rxBuf (fromIntegral rxCount) out
+        xs <- peekArray rxCount rxBuf
+        v  <- fromIntegral <$> peek out
+        return $ check (ec, (v, map fromIntegral xs))
+
+-- | Two Int outputs, a variable-length array (max n elements with an embedded
+-- count pointer), and a final Int output. Returns (a, b, elements, c).
+fToIntIntArrayInt :: (Storable a, Integral a, Integral b)
+                  => Int
+                  -> (Ptr CInt -> Ptr CInt -> Ptr a -> Ptr CInt -> Ptr CInt -> IO CInt)
+                  -> IO (DwfResult (Int, Int, [b], Int))
+fToIntIntArrayInt n f =
+    alloca        $ \pA     ->
+    alloca        $ \pB     ->
+    allocaArray n $ \pData  ->
+    alloca        $ \pCount ->
+    alloca        $ \pC     -> do
+        ec    <- fromIntegral <$> f pA pB pData pCount pC
+        a     <- fromIntegral <$> peek pA
+        b     <- fromIntegral <$> peek pB
+        count <- fromIntegral <$> peek pCount
+        xs    <- map fromIntegral <$> peekArray count pData
+        c     <- fromIntegral <$> peek pC
+        return $ check (ec, (a, b, xs, c))
+
+-- | Three Int outputs, a variable-length array (max n elements with an
+-- embedded count pointer), a buffer-size input, and a final Int output.
+-- Returns (a, b, c, elements, d).
+fToIntIntIntArrayInt :: (Storable a, Integral a, Integral b)
+                     => Int
+                     -> (Ptr CInt -> Ptr CInt -> Ptr CInt -> Ptr CInt -> Ptr a -> Int -> Ptr CInt -> IO CInt)
+                     -> IO (DwfResult (Int, Int, Int, [b], Int))
+fToIntIntIntArrayInt n f =
+    alloca        $ \pA     ->
+    alloca        $ \pB     ->
+    alloca        $ \pC     ->
+    alloca        $ \pCount ->
+    allocaArray n $ \pData  ->
+    alloca        $ \pD     -> do
+        ec    <- fromIntegral <$> f pA pB pC pCount pData n pD
+        a     <- fromIntegral <$> peek pA
+        b     <- fromIntegral <$> peek pB
+        c     <- fromIntegral <$> peek pC
+        count <- fromIntegral <$> peek pCount
+        xs    <- map fromIntegral <$> peekArray count pData
+        d     <- fromIntegral <$> peek pD
+        return $ check (ec, (a, b, c, xs, d))
+
 fToBool :: (Ptr CInt -> IO CInt) -> IO (DwfResult Bool)
 fToBool f = alloca (\a -> do
     errorCode <- fromIntegral <$> f a
     cA <- toB . fromIntegral <$> peek a
     return $ check (errorCode, cA))
     where toB :: Int -> Bool
-          toB = (== 0)
+          toB = (/= 0)
 
 -- Basic stuffs (single parameter)
 
@@ -238,6 +354,15 @@ setI2 f p q r = fCall (f p' q' r')
     where p' = fromIntegral p
           q' = fromIntegral q
           r' = fromIntegral r
+
+setI3 :: (Storable a, Storable b, Storable c)
+      => (Integral a, Integral b, Integral c)
+      => (CInt -> a -> b -> c -> IO CInt) -> Int -> Int -> Int -> Int -> IO (DwfResult ())
+setI3 f p q r s = fCall (f p' q' r' s')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = fromIntegral r
+          s' = fromIntegral s
 
 setI4 :: (Storable a, Storable b, Storable c, Storable d)
       => (Integral a, Integral b, Integral c, Integral d)
@@ -277,6 +402,9 @@ getD3 f p = fToDoubleDoubleDouble (f (fromIntegral p))
 
 getI3 :: (CInt -> Ptr CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> Int -> IO (DwfResult (Int, Int, Int))
 getI3 f p = fToIntIntInt (f (fromIntegral p))
+
+getUI3 :: (CInt -> Ptr CUInt -> Ptr CUInt -> Ptr CUInt -> IO CInt) -> Int -> IO (DwfResult (Int, Int, Int))
+getUI3 f p = fToIntIntInt (f (fromIntegral p))
 
 getI4 :: (Storable a, Storable b, Storable c, Storable d) 
       => (Integral a, Integral b, Integral c, Integral d) 
@@ -371,6 +499,12 @@ getNodeI2 f p q r = fToIntInt (f p' q' r')
 
 getNodeI3 :: (CInt -> CInt -> CInt -> Ptr CInt -> Ptr CInt -> Ptr CInt -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult (Int, Int, Int))
 getNodeI3 f p q r = fToIntIntInt (f p' q' r')
+    where p' = fromIntegral p
+          q' = fromIntegral q
+          r' = fromIntegral r
+
+getNodeDDI :: (CInt -> CInt -> CInt -> Ptr CDouble -> Ptr CDouble -> Ptr CInt -> IO CInt) -> Int -> Int -> Int -> IO (DwfResult (Double, Double, Int))
+getNodeDDI f p q r = fToDoubleDoubleInt (f p' q' r')
     where p' = fromIntegral p
           q' = fromIntegral q
           r' = fromIntegral r

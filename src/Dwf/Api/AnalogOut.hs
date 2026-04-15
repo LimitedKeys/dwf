@@ -1,4 +1,3 @@
-
 module Dwf.Api.AnalogOut where
 
 import Foreign
@@ -7,6 +6,148 @@ import Data.Coerce (coerce)
 
 import Dwf.Dll.Access
 import Dwf.Dll.Wrap
+
+-- ---------------------------------------------------------------------------
+-- Waveform — carrier function type (mirrors DWF funcXxx constants)
+-- ---------------------------------------------------------------------------
+
+data Waveform
+    = DC
+    | Sine
+    | Square
+    | Triangle
+    | RampUp
+    | RampDown
+    | Noise
+    | Pulse
+    deriving (Eq, Show, Enum, Bounded)
+
+waveformToInt :: Waveform -> Int
+waveformToInt DC       = 0
+waveformToInt Sine     = 1
+waveformToInt Square   = 2
+waveformToInt Triangle = 3
+waveformToInt RampUp   = 4
+waveformToInt RampDown = 5
+waveformToInt Noise    = 6
+waveformToInt Pulse    = 7
+
+waveformFromInt :: Int -> Maybe Waveform
+waveformFromInt 0 = Just DC
+waveformFromInt 1 = Just Sine
+waveformFromInt 2 = Just Square
+waveformFromInt 3 = Just Triangle
+waveformFromInt 4 = Just RampUp
+waveformFromInt 5 = Just RampDown
+waveformFromInt 6 = Just Noise
+waveformFromInt 7 = Just Pulse
+waveformFromInt _ = Nothing
+
+-- ---------------------------------------------------------------------------
+-- WaveformConfig — carrier node parameters
+-- ---------------------------------------------------------------------------
+
+data WaveformConfig = WaveformConfig
+    { wfFunction  :: Waveform
+    , wfFrequency :: Double   -- Hz
+    , wfAmplitude :: Double   -- V peak
+    , wfOffset    :: Double   -- V DC offset
+    , wfSymmetry  :: Double   -- % (50 = symmetric; duty cycle for square/pulse)
+    , wfPhase     :: Double   -- degrees
+    } deriving (Eq, Show)
+
+-- | 1 kHz sine wave, ±1 V, no offset.
+defaultWaveformConfig :: WaveformConfig
+defaultWaveformConfig = WaveformConfig
+    { wfFunction  = Sine
+    , wfFrequency = 1000.0
+    , wfAmplitude = 1.0
+    , wfOffset    = 0.0
+    , wfSymmetry  = 50.0
+    , wfPhase     = 0.0
+    }
+
+-- ---------------------------------------------------------------------------
+-- Waveform setup
+-- ---------------------------------------------------------------------------
+
+-- | Configure a channel's carrier node from a WaveformConfig.
+-- Resets the channel first, then sets up the carrier node.
+-- Does not start output — call 'start' (or 'configure' hdwf ch 1) when ready.
+waveform :: Int -> Int -> WaveformConfig -> IO (DwfResult ())
+waveform hdwf ch cfg = do
+    r0 <- reset            hdwf ch
+    r1 <- nodeEnableSet    hdwf ch carrier 1
+    r2 <- nodeFunctionSet  hdwf ch carrier (waveformToInt (wfFunction cfg))
+    r3 <- nodeFrequencySet hdwf ch carrier (wfFrequency cfg)
+    r4 <- nodeAmplitudeSet hdwf ch carrier (wfAmplitude cfg)
+    r5 <- nodeOffsetSet    hdwf ch carrier (wfOffset cfg)
+    r6 <- nodeSymmetrySet  hdwf ch carrier (wfSymmetry cfg)
+    r7 <- nodePhaseSet     hdwf ch carrier (wfPhase cfg)
+    return $ r0 *> r1 *> r2 *> r3 *> r4 *> r5 *> r6 *> r7
+  where
+    carrier = 0   -- AnalogOutNodeCarrier
+
+-- | Sine wave on the given channel.
+sinusoid :: Int -> Int -> Double -> Double -> Double -> IO (DwfResult ())
+sinusoid hdwf ch freq amp offset =
+    waveform hdwf ch defaultWaveformConfig
+        { wfFunction  = Sine
+        , wfFrequency = freq
+        , wfAmplitude = amp
+        , wfOffset    = offset
+        }
+
+-- | Square wave on the given channel. duty is the high-time percentage (0–100).
+square :: Int -> Int -> Double -> Double -> Double -> Double -> IO (DwfResult ())
+square hdwf ch freq amp offset duty =
+    waveform hdwf ch defaultWaveformConfig
+        { wfFunction  = Square
+        , wfFrequency = freq
+        , wfAmplitude = amp
+        , wfOffset    = offset
+        , wfSymmetry  = duty
+        }
+
+-- | Triangle wave on the given channel.
+triangle :: Int -> Int -> Double -> Double -> Double -> IO (DwfResult ())
+triangle hdwf ch freq amp offset =
+    waveform hdwf ch defaultWaveformConfig
+        { wfFunction  = Triangle
+        , wfFrequency = freq
+        , wfAmplitude = amp
+        , wfOffset    = offset
+        }
+
+-- | DC voltage on the given channel.
+dc :: Int -> Int -> Double -> IO (DwfResult ())
+dc hdwf ch voltage =
+    waveform hdwf ch defaultWaveformConfig
+        { wfFunction  = DC
+        , wfAmplitude = 0.0
+        , wfOffset    = voltage
+        }
+
+-- | Band-limited noise on the given channel.
+noise :: Int -> Int -> Double -> Double -> IO (DwfResult ())
+noise hdwf ch amp offset =
+    waveform hdwf ch defaultWaveformConfig
+        { wfFunction  = Noise
+        , wfAmplitude = amp
+        , wfOffset    = offset
+        }
+
+-- | Start output on a channel (after configuring with 'waveform' or a shortcut).
+start :: Int -> Int -> IO (DwfResult ())
+start hdwf ch = configure hdwf ch 1
+
+-- | Stop output on a channel.
+stop :: Int -> Int -> IO (DwfResult ())
+stop hdwf ch = configure hdwf ch 0
+
+-- ---------------------------------------------------------------------------
+-- Primitives
+-- ---------------------------------------------------------------------------
 
 count :: Int -> IO (DwfResult Int)
 count = getI1 fdwf_analog_out_count
