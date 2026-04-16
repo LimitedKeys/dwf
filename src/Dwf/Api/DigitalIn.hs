@@ -8,43 +8,43 @@ import Dwf.Dll.Wrap
 import Dwf.Dll.Access
 
 -- ---------------------------------------------------------------------------
--- DigitalInTriggerConfig — trigger settings
+-- TriggerConfig — trigger settings
 -- ---------------------------------------------------------------------------
 
-data DigitalInTriggerConfig = DigitalInTriggerConfig
-    { dinTrigSource         :: Int     -- trigger source (0=none/auto, 1=PC, ...)
-    , dinTrigSlope          :: Int     -- 0=rising, 1=falling, 2=either
-    , dinTrigPosition       :: Int     -- pre-trigger samples
-    , dinTrigPrefill        :: Int     -- pre-fill samples (record mode)
-    , dinTrigAutoTimeout    :: Double  -- auto-trigger timeout in seconds; 0=off
+data TriggerConfig = TriggerConfig
+    { trigSource         :: Int     -- trigger source (0=none/auto, 1=PC, ...)
+    , trigSlope          :: Int     -- 0=rising, 1=falling, 2=either
+    , trigPosition       :: Int     -- pre-trigger samples
+    , trigPrefill        :: Int     -- pre-fill samples (record mode)
+    , trigAutoTimeout    :: Double  -- auto-trigger timeout in seconds; 0=off
     -- Trigger detector bitmasks (pin indices as bit positions)
-    , dinTrigLevelHigh      :: Int     -- pins that must be high to trigger
-    , dinTrigLevelLow       :: Int     -- pins that must be low to trigger
-    , dinTrigEdgeRise       :: Int     -- pins that trigger on rising edge
-    , dinTrigEdgeFall       :: Int     -- pins that trigger on falling edge
+    , trigLevelHigh      :: Int     -- pins that must be high to trigger
+    , trigLevelLow       :: Int     -- pins that must be low to trigger
+    , trigEdgeRise       :: Int     -- pins that trigger on rising edge
+    , trigEdgeFall       :: Int     -- pins that trigger on falling edge
     -- Reset trigger bitmasks (used in multi-stage trigger sequences)
-    , dinTrigResetLevelHigh :: Int
-    , dinTrigResetLevelLow  :: Int
-    , dinTrigResetEdgeRise  :: Int
-    , dinTrigResetEdgeFall  :: Int
+    , trigResetLevelHigh :: Int
+    , trigResetLevelLow  :: Int
+    , trigResetEdgeRise  :: Int
+    , trigResetEdgeFall  :: Int
     } deriving (Eq, Show)
 
 -- | Immediate trigger — no pin conditions, no auto-timeout.
-defaultDigitalInTriggerConfig :: DigitalInTriggerConfig
-defaultDigitalInTriggerConfig = DigitalInTriggerConfig
-    { dinTrigSource         = 0    -- none/auto
-    , dinTrigSlope          = 0    -- rising
-    , dinTrigPosition       = 0
-    , dinTrigPrefill        = 0
-    , dinTrigAutoTimeout    = 0.0  -- off
-    , dinTrigLevelHigh      = 0
-    , dinTrigLevelLow       = 0
-    , dinTrigEdgeRise       = 0
-    , dinTrigEdgeFall       = 0
-    , dinTrigResetLevelHigh = 0
-    , dinTrigResetLevelLow  = 0
-    , dinTrigResetEdgeRise  = 0
-    , dinTrigResetEdgeFall  = 0
+defaultTriggerConfig :: TriggerConfig
+defaultTriggerConfig = TriggerConfig
+    { trigSource         = 0    -- none/auto
+    , trigSlope          = 0    -- rising
+    , trigPosition       = 0
+    , trigPrefill        = 0
+    , trigAutoTimeout    = 0.0  -- off
+    , trigLevelHigh      = 0
+    , trigLevelLow       = 0
+    , trigEdgeRise       = 0
+    , trigEdgeFall       = 0
+    , trigResetLevelHigh = 0
+    , trigResetLevelLow  = 0
+    , trigResetEdgeRise  = 0
+    , trigResetEdgeFall  = 0
     }
 
 -- ---------------------------------------------------------------------------
@@ -57,7 +57,7 @@ data DigitalInConfig = DigitalInConfig
     , dinSampleFormat :: Int                    -- bits per sample: 8, 16, or 32
     , dinSampleMode   :: Int                    -- 0=simple, 1=noise (interleaved min/max)
     , dinAcqMode      :: Int                    -- 0=single, 1=scan-shift, 2=scan-screen, 3=record
-    , dinTrigger      :: DigitalInTriggerConfig
+    , dinTrigger      :: TriggerConfig
     } deriving (Eq, Show)
 
 -- | Single-shot capture, divider=1 (maximum rate), 4096 samples, 16-bit, immediate trigger.
@@ -68,7 +68,7 @@ defaultDigitalInConfig = DigitalInConfig
     , dinSampleFormat = 16
     , dinSampleMode   = 0       -- simple
     , dinAcqMode      = 0       -- single
-    , dinTrigger      = defaultDigitalInTriggerConfig
+    , dinTrigger      = defaultTriggerConfig
     }
 
 -- ---------------------------------------------------------------------------
@@ -76,17 +76,17 @@ defaultDigitalInConfig = DigitalInConfig
 -- ---------------------------------------------------------------------------
 
 -- | Apply all trigger settings. Can also be called independently of 'setup'.
-applyTrigger :: Int -> DigitalInTriggerConfig -> IO (DwfResult ())
+applyTrigger :: Int -> TriggerConfig -> IO (DwfResult ())
 applyTrigger hdwf trig = do
-    r1 <- triggerSourceSet      hdwf (dinTrigSource trig)
-    r2 <- triggerSlopeSet       hdwf (dinTrigSlope trig)
-    r3 <- triggerPositionSet    hdwf (dinTrigPosition trig)
-    r4 <- triggerPrefillSet     hdwf (dinTrigPrefill trig)
-    r5 <- triggerAutoTimeoutSet hdwf (dinTrigAutoTimeout trig)
-    r6 <- triggerSet      hdwf (dinTrigLevelHigh trig)      (dinTrigLevelLow trig)
-                               (dinTrigEdgeRise trig)       (dinTrigEdgeFall trig)
-    r7 <- triggerResetSet hdwf (dinTrigResetLevelHigh trig) (dinTrigResetLevelLow trig)
-                               (dinTrigResetEdgeRise trig)  (dinTrigResetEdgeFall trig)
+    r1 <- triggerSourceSet      hdwf (trigSource trig)
+    r2 <- triggerSlopeSet       hdwf (trigSlope trig)
+    r3 <- triggerPositionSet    hdwf (trigPosition trig)
+    r4 <- triggerPrefillSet     hdwf (trigPrefill trig)
+    r5 <- triggerAutoTimeoutSet hdwf (trigAutoTimeout trig)
+    r6 <- triggerSet      hdwf (trigLevelHigh trig)      (trigLevelLow trig)
+                               (trigEdgeRise trig)       (trigEdgeFall trig)
+    r7 <- triggerResetSet hdwf (trigResetLevelHigh trig) (trigResetLevelLow trig)
+                               (trigResetEdgeRise trig)  (trigResetEdgeFall trig)
     return $ r1 *> r2 *> r3 *> r4 *> r5 *> r6 *> r7
 
 -- | Apply all fields of a DigitalInConfig to the device.

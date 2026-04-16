@@ -31,9 +31,9 @@ main :: IO ()
 main = with 0 $ \hdwf -> do
     putStrLn "Device open."
 
-    let trig = DIn.defaultDigitalInTriggerConfig
-                    { DIn.dinTrigSource   = trigsrcDetectorDigitalIn
-                    , DIn.dinTrigEdgeRise = 1   -- bit 0 = DIO 0 rising edge
+    let trig = DIn.defaultTriggerConfig
+                    { DIn.trigSource   = trigsrcDetectorDigitalIn
+                    , DIn.trigEdgeRise = 1   -- bit 0 = DIO 0 rising edge
                     }
 
         cfg = DIn.defaultDigitalInConfig

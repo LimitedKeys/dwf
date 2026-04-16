@@ -93,23 +93,23 @@ prop_din_defaultAcqMode = dinAcqMode defaultDigitalInConfig == 0
 
 -- Default trigger source is 0 (immediate/auto)
 prop_din_defaultTrigSource :: Bool
-prop_din_defaultTrigSource = dinTrigSource (dinTrigger defaultDigitalInConfig) == 0
+prop_din_defaultTrigSource = trigSource (dinTrigger defaultDigitalInConfig) == 0
 
 -- All default trigger detector bitmasks are 0 (no pin conditions)
 prop_din_defaultTrigBitmasks :: Bool
 prop_din_defaultTrigBitmasks =
     let t = dinTrigger defaultDigitalInConfig
-    in dinTrigLevelHigh t == 0 && dinTrigLevelLow t == 0
-    && dinTrigEdgeRise  t == 0 && dinTrigEdgeFall t == 0
-    && dinTrigResetLevelHigh t == 0 && dinTrigResetLevelLow t == 0
-    && dinTrigResetEdgeRise  t == 0 && dinTrigResetEdgeFall t == 0
+    in trigLevelHigh t == 0 && trigLevelLow t == 0
+    && trigEdgeRise  t == 0 && trigEdgeFall t == 0
+    && trigResetLevelHigh t == 0 && trigResetLevelLow t == 0
+    && trigResetEdgeRise  t == 0 && trigResetEdgeFall t == 0
 
 -- Trigger fields survive round-trip through record update
 prop_din_trigUpdate :: Int -> Bool
 prop_din_trigUpdate src =
-    let trig = defaultDigitalInTriggerConfig { dinTrigSource = src }
-    in dinTrigSource trig == src
-    && dinTrigLevelHigh trig == 0  -- other fields unaffected
+    let trig = defaultTriggerConfig { trigSource = src }
+    in trigSource trig == src
+    && trigLevelHigh trig == 0  -- other fields unaffected
 
 -- ---------------------------------------------------------------------------
 -- Test list
