@@ -4,31 +4,31 @@ import Dwf.Dll.Wrap
 import Dwf.Dll.Access
 
 -- ---------------------------------------------------------------------------
--- DigitalIOConfig — static digital I/O configuration
+-- Config — static digital I/O configuration
 -- ---------------------------------------------------------------------------
 
-data DigitalIOConfig = DigitalIOConfig
-    { dioOutputEnable :: Int   -- bitmask: which pins are driven as outputs
-    , dioOutput       :: Int   -- bitmask: output levels for driven pins
+data Config = Config
+    { outputEnable :: Int   -- bitmask: which pins are driven as outputs
+    , output       :: Int   -- bitmask: output levels for driven pins
     } deriving (Eq, Show)
 
 -- | All pins tristated as inputs, outputs driven low.
-defaultDigitalIOConfig :: DigitalIOConfig
-defaultDigitalIOConfig = DigitalIOConfig
-    { dioOutputEnable = 0
-    , dioOutput       = 0
+defaultConfig :: Config
+defaultConfig = Config
+    { outputEnable = 0
+    , output       = 0
     }
 
--- | Apply a DigitalIOConfig to the device.
+-- | Apply a Config to the device.
 -- Returns the first error encountered, or DwfResult () if all succeed.
 -- Note: this is named 'setup' rather than 'configure' because 'configure'
 -- already exists in this module as the primitive that commits pin state
 -- (FDwfDigitalIOConfigure).
-setup :: Int -> DigitalIOConfig -> IO (DwfResult ())
+setup :: Int -> Config -> IO (DwfResult ())
 setup hdwf cfg = do
     r1 <- reset           hdwf
-    r2 <- outputEnableSet hdwf (dioOutputEnable cfg)
-    r3 <- outputSet       hdwf (dioOutput cfg)
+    r2 <- outputEnableSet hdwf (outputEnable cfg)
+    r3 <- outputSet       hdwf (output cfg)
     return $ r1 *> r2 *> r3
 
 -- ---------------------------------------------------------------------------
@@ -48,10 +48,10 @@ outputEnableInfo :: Int -> IO (DwfResult Int)
 outputEnableInfo = getI1X fdwf_digital_io_output_enable_info
 
 outputEnableSet :: Int -> Int -> IO (DwfResult ())
-outputEnableSet = setI1X fdwf_digital_io_output_enable_set 
+outputEnableSet = setI1X fdwf_digital_io_output_enable_set
 
 outputEnableGet :: Int -> IO (DwfResult Int)
-outputEnableGet = getUI1 fdwf_digital_io_output_enable_get 
+outputEnableGet = getUI1 fdwf_digital_io_output_enable_get
 
 outputInfo :: Int -> IO (DwfResult Int)
 outputInfo = getUI1 fdwf_digital_io_output_info
@@ -91,4 +91,3 @@ inputInfo64 = getI1X fdwf_digital_io_input_info64
 
 inputStatus64 :: Int -> IO (DwfResult Int)
 inputStatus64 = getI1X fdwf_digital_io_input_status64
-

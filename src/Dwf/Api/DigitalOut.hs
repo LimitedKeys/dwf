@@ -17,58 +17,58 @@ data DigitalOutMode
     deriving (Eq, Show)
 
 -- ---------------------------------------------------------------------------
--- DigitalOutChannelConfig — per-channel configuration
+-- ChannelConfig — per-channel configuration
 -- ---------------------------------------------------------------------------
 
-data DigitalOutChannelConfig = DigitalOutChannelConfig
-    { doutEnable  :: Bool
-    , doutOutput  :: Int      -- 0=push-pull, 1=open-drain, 2=open-source, 3=HiZ
-    , doutIdle    :: Int      -- 0=init, 1=low, 2=high, 3=HiZ
-    , doutDivider :: Int      -- base clock divider
-    , doutMode    :: DigitalOutMode
+data ChannelConfig = ChannelConfig
+    { enable  :: Bool
+    , output  :: Int      -- 0=push-pull, 1=open-drain, 2=open-source, 3=HiZ
+    , idle    :: Int      -- 0=init, 1=low, 2=high, 3=HiZ
+    , divider :: Int      -- base clock divider
+    , mode    :: DigitalOutMode
     } deriving (Eq, Show)
 
-defaultDigitalOutChannelConfig :: DigitalOutChannelConfig
-defaultDigitalOutChannelConfig = DigitalOutChannelConfig
-    { doutEnable  = True
-    , doutOutput  = 0     -- push-pull
-    , doutIdle    = 1     -- low
-    , doutDivider = 1
-    , doutMode    = PulseMode 1 1
+defaultChannelConfig :: ChannelConfig
+defaultChannelConfig = ChannelConfig
+    { enable  = True
+    , output  = 0     -- push-pull
+    , idle    = 1     -- low
+    , divider = 1
+    , mode    = PulseMode 1 1
     }
 
 -- ---------------------------------------------------------------------------
--- DigitalOutConfig — top-level configuration
+-- Config — top-level configuration
 -- ---------------------------------------------------------------------------
 
-data DigitalOutConfig = DigitalOutConfig
-    { doutChannels   :: [DigitalOutChannelConfig]  -- one per channel, indexed from 0
-    , doutRun        :: Double   -- run duration in seconds; 0 = continuous
-    , doutWait       :: Double   -- pre-run wait in seconds
-    , doutRepeat     :: Int      -- repeat count; 0 = continuous
-    , doutTrigSource :: Int
-    , doutTrigSlope  :: Int
+data Config = Config
+    { channels   :: [ChannelConfig]  -- one per channel, indexed from 0
+    , run        :: Double   -- run duration in seconds; 0 = continuous
+    , wait       :: Double   -- pre-run wait in seconds
+    , repeatCount :: Int     -- repeat count; 0 = continuous
+    , trigSource :: Int
+    , trigSlope  :: Int
     } deriving (Eq, Show)
 
-defaultDigitalOutConfig :: DigitalOutConfig
-defaultDigitalOutConfig = DigitalOutConfig
-    { doutChannels   = []
-    , doutRun        = 0.0    -- continuous
-    , doutWait       = 0.0
-    , doutRepeat     = 0      -- continuous
-    , doutTrigSource = 0      -- none
-    , doutTrigSlope  = 0      -- rising
+defaultConfig :: Config
+defaultConfig = Config
+    { channels    = []
+    , run         = 0.0    -- continuous
+    , wait        = 0.0
+    , repeatCount = 0      -- continuous
+    , trigSource  = 0      -- none
+    , trigSlope   = 0      -- rising
     }
 
 -- | Returns True if all enabled channels share the same clock divider.
 -- Channels with different dividers will drift out of phase immediately.
--- Use this to validate a 'DigitalOutConfig' before passing it to 'setup'.
-configDividersConsistent :: DigitalOutConfig -> Bool
-configDividersConsistent cfg = case map doutDivider active of
+-- Use this to validate a 'Config' before passing it to 'setup'.
+configDividersConsistent :: Config -> Bool
+configDividersConsistent cfg = case map divider active of
     []     -> True
     (d:ds) -> all (== d) ds
   where
-    active = filter doutEnable (doutChannels cfg)
+    active = filter enable (channels cfg)
 
 -- ---------------------------------------------------------------------------
 -- Pure config helpers
@@ -86,10 +86,10 @@ packBits bs = map packByte (chunksOf 8 bs)
 
 -- | Compute a PWM channel config from an internal clock rate (Hz), target
 -- frequency (Hz), and duty cycle (0.0–1.0). Pure — no IO required.
-pwmConfig :: Double -> Double -> Double -> DigitalOutChannelConfig
-pwmConfig internalHz freq duty = defaultDigitalOutChannelConfig
-    { doutDivider = 1
-    , doutMode    = PulseMode (max 1 highCount) (max 1 lowCount)
+pwmConfig :: Double -> Double -> Double -> ChannelConfig
+pwmConfig internalHz freq duty = defaultChannelConfig
+    { divider = 1
+    , mode    = PulseMode (max 1 highCount) (max 1 lowCount)
     }
   where
     total     = max 2 (round (internalHz / freq) :: Int)
@@ -97,16 +97,16 @@ pwmConfig internalHz freq duty = defaultDigitalOutChannelConfig
     lowCount  = total - highCount
 
 -- | Compute a 50% duty-cycle clock config. Equivalent to 'pwmConfig hz freq 0.5'.
-clockConfig :: Double -> Double -> DigitalOutChannelConfig
+clockConfig :: Double -> Double -> ChannelConfig
 clockConfig internalHz freq = pwmConfig internalHz freq 0.5
 
 -- | Compute a custom-pattern channel config from an internal clock rate (Hz),
 -- bit rate (Hz), and a bit pattern (LSB-first). Each bit lasts one divider tick.
 -- Use this alongside 'packBits' or pass a [Bool] directly.
-patternConfig :: Double -> Double -> [Bool] -> DigitalOutChannelConfig
-patternConfig internalHz bitRate bits = defaultDigitalOutChannelConfig
-    { doutDivider = max 1 (round (internalHz / bitRate) :: Int)
-    , doutMode    = CustomMode (packBits bits) (length bits)
+patternConfig :: Double -> Double -> [Bool] -> ChannelConfig
+patternConfig internalHz bitRate bits = defaultChannelConfig
+    { divider = max 1 (round (internalHz / bitRate) :: Int)
+    , mode    = CustomMode (packBits bits) (length bits)
     }
 
 -- ---------------------------------------------------------------------------
@@ -125,31 +125,31 @@ applyMode hdwf ch (CustomMode bytes bits) = do
 applyMode hdwf ch RandomMode = typeSet hdwf ch 2
 
 -- | Apply settings for one channel. Can also be called independently of 'setup'.
-applyChannel :: Int -> Int -> DigitalOutChannelConfig -> IO (DwfResult ())
+applyChannel :: Int -> Int -> ChannelConfig -> IO (DwfResult ())
 applyChannel hdwf i cfg = do
-    r1 <- enableSet  hdwf i (if doutEnable cfg then 1 else 0)
-    r2 <- outputSet  hdwf i (doutOutput cfg)
-    r3 <- idleSet    hdwf i (doutIdle cfg)
-    r4 <- dividerSet hdwf i (doutDivider cfg)
-    r5 <- applyMode  hdwf i (doutMode cfg)
+    r1 <- enableSet  hdwf i (if enable cfg then 1 else 0)
+    r2 <- outputSet  hdwf i (output cfg)
+    r3 <- idleSet    hdwf i (idle cfg)
+    r4 <- dividerSet hdwf i (divider cfg)
+    r5 <- applyMode  hdwf i (mode cfg)
     return $ r1 *> r2 *> r3 *> r4 *> r5
 
--- | Apply all fields of a DigitalOutConfig to the device.
+-- | Apply all fields of a Config to the device.
 -- Returns the first error encountered, or DwfResult () if all succeed.
 -- Note: this is named 'setup' rather than 'configure' because 'configure'
 -- already exists in this module as the primitive that starts output
 -- (FDwfDigitalOutConfigure).
 -- Precondition: 'configDividersConsistent' cfg — all enabled channels should
 -- share the same divider for time-aligned output.
-setup :: Int -> DigitalOutConfig -> IO (DwfResult ())
+setup :: Int -> Config -> IO (DwfResult ())
 setup hdwf cfg = do
     r0   <- reset            hdwf
-    r1   <- runSet           hdwf (doutRun cfg)
-    r2   <- waitSet          hdwf (doutWait cfg)
-    r3   <- repeatSet        hdwf (doutRepeat cfg)
-    r4   <- triggerSourceSet hdwf (doutTrigSource cfg)
-    r5   <- triggerSlopeSet  hdwf (doutTrigSlope cfg)
-    chRs <- mapM (\(i, ch) -> applyChannel hdwf i ch) (zip [0..] (doutChannels cfg))
+    r1   <- runSet           hdwf (run cfg)
+    r2   <- waitSet          hdwf (wait cfg)
+    r3   <- repeatSet        hdwf (repeatCount cfg)
+    r4   <- triggerSourceSet hdwf (trigSource cfg)
+    r5   <- triggerSlopeSet  hdwf (trigSlope cfg)
+    chRs <- mapM (\(i, ch) -> applyChannel hdwf i ch) (zip [0..] (channels cfg))
     return $ r0 *> r1 *> r2 *> r3 *> r4 *> r5 *> foldr (*>) (DwfResult ()) chRs
 
 -- | Start output (after 'setup').
@@ -193,7 +193,7 @@ status :: Int -> IO (DwfResult Int)
 status = getI1 fdwf_digital_out_status
 
 internalClockInfo :: Int -> IO (DwfResult Double)
-internalClockInfo = getD1 fdwf_digital_out_internal_clock_info 
+internalClockInfo = getD1 fdwf_digital_out_internal_clock_info
 
 triggerSourceSet :: Int -> Int -> IO (DwfResult ())
 triggerSourceSet = setI1 fdwf_digital_out_trigger_source_set
@@ -220,7 +220,7 @@ waitSet :: Int -> Double -> IO (DwfResult ())
 waitSet = setD1 fdwf_digital_out_wait_set
 
 waitGet :: Int -> IO (DwfResult Double)
-waitGet = getD1 fdwf_digital_out_wait_get 
+waitGet = getD1 fdwf_digital_out_wait_get
 
 repeatInfo :: Int -> IO (DwfResult (Int, Int))
 repeatInfo = getI2 fdwf_digital_out_repeat_info
@@ -229,7 +229,7 @@ repeatSet :: Int -> Int -> IO (DwfResult ())
 repeatSet = setI1 fdwf_digital_out_repeat_set
 
 repeatGet :: Int -> IO (DwfResult Int)
-repeatGet = getI1 fdwf_digital_out_repeat_get 
+repeatGet = getI1 fdwf_digital_out_repeat_get
 
 repeatStatus :: Int -> IO (DwfResult Int)
 repeatStatus = getI1 fdwf_digital_out_repeat_status

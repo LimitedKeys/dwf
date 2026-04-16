@@ -21,7 +21,7 @@ main = with 0 $ \hdwf -> do
     putStrLn "Device open."
     putStrLn "Scanning I2C bus — SCL=DIO0, SDA=DIO1\n"
 
-    r1 <- I2C.configure hdwf I2C.defaultI2cConfig
+    r1 <- I2C.configure hdwf I2C.defaultConfig
     case r1 of
         DwfError n -> putStrLn $ "configure failed: error " <> show n
         _ -> do

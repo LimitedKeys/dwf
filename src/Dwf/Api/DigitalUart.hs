@@ -7,33 +7,33 @@ import Dwf.Dll.Wrap
 import Dwf.Dll.Access
 
 -- ---------------------------------------------------------------------------
--- UartConfig — full bus configuration as a pure value
+-- Config — full bus configuration as a pure value
 -- ---------------------------------------------------------------------------
 
-data UartConfig = UartConfig
-    { uartBaudRate :: Double   -- baud rate in bps
-    , uartBits     :: Int      -- data bits (typically 8)
-    , uartParity   :: Int      -- 0=none, 1=odd, 2=even
-    , uartStop     :: Double   -- stop bits (1.0 or 2.0)
-    , uartTxPin    :: Int      -- DIO pin for TX
-    , uartRxPin    :: Int      -- DIO pin for RX
+data Config = Config
+    { baudRate :: Double   -- baud rate in bps
+    , bits     :: Int      -- data bits (typically 8)
+    , parity   :: Int      -- 0=none, 1=odd, 2=even
+    , stop     :: Double   -- stop bits (1.0 or 2.0)
+    , txPin    :: Int      -- DIO pin for TX
+    , rxPin    :: Int      -- DIO pin for RX
     } deriving (Eq, Show)
 
-defaultUartConfig :: UartConfig
-defaultUartConfig = UartConfig
-    { uartBaudRate = 9600
-    , uartBits     = 8
-    , uartParity   = 0     -- none
-    , uartStop     = 1.0
-    , uartTxPin    = 0
-    , uartRxPin    = 1
+defaultConfig :: Config
+defaultConfig = Config
+    { baudRate = 9600
+    , bits     = 8
+    , parity   = 0     -- none
+    , stop     = 1.0
+    , txPin    = 0
+    , rxPin    = 1
     }
 
 -- | Returns True if all pin assignments are distinct.
--- Use this to validate a 'UartConfig' before passing it to 'configure'.
-configPinsDistinct :: UartConfig -> Bool
+-- Use this to validate a 'Config' before passing it to 'configure'.
+configPinsDistinct :: Config -> Bool
 configPinsDistinct cfg = length pins == length (nub pins)
-  where pins = [uartTxPin cfg, uartRxPin cfg]
+  where pins = [txPin cfg, rxPin cfg]
 
 -- ---------------------------------------------------------------------------
 -- Configuration
@@ -60,18 +60,18 @@ txSet = setI1 fdwf_digital_uart_tx_set
 rxSet :: Int -> Int -> IO (DwfResult ())
 rxSet = setI1 fdwf_digital_uart_rx_set
 
--- | Apply all fields of a UartConfig to the device in one call.
+-- | Apply all fields of a Config to the device in one call.
 -- Returns the first error encountered, or DwfResult () if all succeed.
 -- Precondition: 'configPinsDistinct' cfg — TX and RX must be on different pins.
-configure :: Int -> UartConfig -> IO (DwfResult ())
+configure :: Int -> Config -> IO (DwfResult ())
 configure hdwf cfg = do
     r1 <- reset    hdwf
-    r2 <- rateSet  hdwf (uartBaudRate cfg)
-    r3 <- bitsSet  hdwf (uartBits cfg)
-    r4 <- paritySet hdwf (uartParity cfg)
-    r5 <- stopSet  hdwf (uartStop cfg)
-    r6 <- txSet    hdwf (uartTxPin cfg)
-    r7 <- rxSet    hdwf (uartRxPin cfg)
+    r2 <- rateSet  hdwf (baudRate cfg)
+    r3 <- bitsSet  hdwf (bits cfg)
+    r4 <- paritySet hdwf (parity cfg)
+    r5 <- stopSet  hdwf (stop cfg)
+    r6 <- txSet    hdwf (txPin cfg)
+    r7 <- rxSet    hdwf (rxPin cfg)
     return $ r1 *> r2 *> r3 *> r4 *> r5 *> r6 *> r7
 
 tx :: Int -> B.ByteString -> IO (DwfResult ())

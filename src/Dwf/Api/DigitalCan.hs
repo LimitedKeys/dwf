@@ -7,29 +7,29 @@ import Dwf.Dll.Wrap
 import Dwf.Dll.Access
 
 -- ---------------------------------------------------------------------------
--- CanConfig — full bus configuration as a pure value
+-- Config — full bus configuration as a pure value
 -- ---------------------------------------------------------------------------
 
-data CanConfig = CanConfig
-    { canBitRate  :: Double   -- bit rate in bps
-    , canPolarity :: Int      -- 0=normal (dominant low), 1=inverted
-    , canTxPin    :: Int      -- DIO pin for TX
-    , canRxPin    :: Int      -- DIO pin for RX
+data Config = Config
+    { bitRate  :: Double   -- bit rate in bps
+    , polarity :: Int      -- 0=normal (dominant low), 1=inverted
+    , txPin    :: Int      -- DIO pin for TX
+    , rxPin    :: Int      -- DIO pin for RX
     } deriving (Eq, Show)
 
-defaultCanConfig :: CanConfig
-defaultCanConfig = CanConfig
-    { canBitRate  = 500000   -- 500 kbps
-    , canPolarity = 0        -- normal
-    , canTxPin    = 0
-    , canRxPin    = 1
+defaultConfig :: Config
+defaultConfig = Config
+    { bitRate  = 500000   -- 500 kbps
+    , polarity = 0        -- normal
+    , txPin    = 0
+    , rxPin    = 1
     }
 
 -- | Returns True if all pin assignments are distinct.
--- Use this to validate a 'CanConfig' before passing it to 'configure'.
-configPinsDistinct :: CanConfig -> Bool
+-- Use this to validate a 'Config' before passing it to 'configure'.
+configPinsDistinct :: Config -> Bool
 configPinsDistinct cfg = length pins == length (nub pins)
-  where pins = [canTxPin cfg, canRxPin cfg]
+  where pins = [txPin cfg, rxPin cfg]
 
 -- ---------------------------------------------------------------------------
 -- Configuration
@@ -53,16 +53,16 @@ txSet = setI1 fdwf_digital_can_tx_set
 rxSet :: Int -> Int -> IO (DwfResult ())
 rxSet = setI1 fdwf_digital_can_rx_set
 
--- | Apply all fields of a CanConfig to the device in one call.
+-- | Apply all fields of a Config to the device in one call.
 -- Returns the first error encountered, or DwfResult () if all succeed.
 -- Precondition: 'configPinsDistinct' cfg — TX and RX must be on different pins.
-configure :: Int -> CanConfig -> IO (DwfResult ())
+configure :: Int -> Config -> IO (DwfResult ())
 configure hdwf cfg = do
     r1 <- reset        hdwf
-    r2 <- rateSet      hdwf (canBitRate cfg)
-    r3 <- polaritySet  hdwf (canPolarity cfg)
-    r4 <- txSet        hdwf (canTxPin cfg)
-    r5 <- rxSet        hdwf (canRxPin cfg)
+    r2 <- rateSet      hdwf (bitRate cfg)
+    r3 <- polaritySet  hdwf (polarity cfg)
+    r4 <- txSet        hdwf (txPin cfg)
+    r5 <- rxSet        hdwf (rxPin cfg)
     return $ r1 *> r2 *> r3 *> r4 *> r5
 
 -- ---------------------------------------------------------------------------

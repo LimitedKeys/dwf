@@ -20,11 +20,11 @@ main = with 0 $ \hdwf -> do
     putStrLn "Device open."
     putStrLn "Connect DIO 1 (MOSI) to DIO 2 (MISO) for loopback."
 
-    r1 <- SPI.configure hdwf SPI.defaultSpiConfig
+    r1 <- SPI.configure hdwf SPI.defaultConfig
     case r1 of
         DwfError n -> putStrLn $ "configure failed: error " <> show n
         _ -> do
-            let csPin  = SPI.spiCsPin SPI.defaultSpiConfig
+            let csPin  = SPI.csPin SPI.defaultConfig
                 txData = [0x01..0x08] :: [Word8]
 
             _  <- SPI.select hdwf csPin 0   -- assert CS (drive low)

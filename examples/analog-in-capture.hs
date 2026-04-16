@@ -25,7 +25,7 @@ main = with 0 $ \hdwf -> do
     putStrLn "Device open."
 
     -- Apply default config: 1 MHz, 4096 samples, both channels at ±5 V.
-    r1 <- AIn.setup hdwf AIn.defaultAnalogInConfig
+    r1 <- AIn.setup hdwf AIn.defaultConfig
     case r1 of
         DwfError n -> putStrLn $ "setup failed: error " <> show n
         _ -> do
@@ -37,7 +37,7 @@ main = with 0 $ \hdwf -> do
                     putStrLn "Capturing..."
                     waitForDone hdwf
 
-                    let n = AIn.ainBufferSize AIn.defaultAnalogInConfig
+                    let n = AIn.bufferSize AIn.defaultConfig
 
                     ch0 <- AIn.statusData hdwf 0 n
                     ch1 <- AIn.statusData hdwf 1 n

@@ -21,8 +21,8 @@ main :: IO ()
 main = with 0 $ \hdwf -> do
     putStrLn "Device open."
 
-    let cfg = DOut.defaultDigitalOutConfig
-                { DOut.doutChannels =
+    let cfg = DOut.defaultConfig
+                { DOut.channels =
                     [ DOut.pwmConfig   masterHz 1000.0 0.5   -- DIO 0: 1 kHz, 50% duty
                     , DOut.clockConfig masterHz 1e6          -- DIO 1: 1 MHz clock
                     ]

@@ -52,7 +52,7 @@ prop_packBits_allTrue (Positive n) =
 prop_pwmConfig_total :: Positive Double -> Positive Double -> Property
 prop_pwmConfig_total (Positive hz) (Positive freq) =
     freq < hz ==>
-    case doutMode (pwmConfig hz freq 0.5) of
+    case mode (pwmConfig hz freq 0.5) of
         PulseMode h l -> h + l == max 2 (round (hz / freq) :: Int)
         _             -> False
 
@@ -60,7 +60,7 @@ prop_pwmConfig_total (Positive hz) (Positive freq) =
 prop_pwmConfig_halfDuty :: Positive Double -> Positive Double -> Property
 prop_pwmConfig_halfDuty (Positive hz) (Positive freq) =
     freq < hz ==>
-    case doutMode (pwmConfig hz freq 0.5) of
+    case mode (pwmConfig hz freq 0.5) of
         PulseMode h l -> abs (h - l) <= 1
         _             -> False
 
@@ -68,7 +68,7 @@ prop_pwmConfig_halfDuty (Positive hz) (Positive freq) =
 prop_pwmConfig_zeroDuty :: Positive Double -> Positive Double -> Property
 prop_pwmConfig_zeroDuty (Positive hz) (Positive freq) =
     freq < hz ==>
-    case doutMode (pwmConfig hz freq 0.0) of
+    case mode (pwmConfig hz freq 0.0) of
         PulseMode h _ -> h == 1
         _             -> False
 
@@ -76,7 +76,7 @@ prop_pwmConfig_zeroDuty (Positive hz) (Positive freq) =
 prop_pwmConfig_fullDuty :: Positive Double -> Positive Double -> Property
 prop_pwmConfig_fullDuty (Positive hz) (Positive freq) =
     freq < hz ==>
-    case doutMode (pwmConfig hz freq 1.0) of
+    case mode (pwmConfig hz freq 1.0) of
         PulseMode _ l -> l == 1
         _             -> False
 
@@ -105,21 +105,21 @@ prop_pwmConfig_clampBelow (Positive hz) (Positive freq) =
 -- Bit count in CustomMode matches input length
 prop_patternConfig_bitCount :: Positive Double -> Positive Double -> [Bool] -> Bool
 prop_patternConfig_bitCount (Positive hz) (Positive bitRate) bits =
-    case doutMode (patternConfig hz bitRate bits) of
+    case mode (patternConfig hz bitRate bits) of
         CustomMode _ n -> n == length bits
         _              -> False
 
 -- Packed byte count matches ceil(n/8)
 prop_patternConfig_byteCount :: Positive Double -> Positive Double -> [Bool] -> Bool
 prop_patternConfig_byteCount (Positive hz) (Positive bitRate) bits =
-    case doutMode (patternConfig hz bitRate bits) of
+    case mode (patternConfig hz bitRate bits) of
         CustomMode bs _ -> length bs == (length bits + 7) `div` 8
         _               -> False
 
 -- Divider is at least 1
 prop_patternConfig_divider :: Positive Double -> Positive Double -> [Bool] -> Bool
 prop_patternConfig_divider (Positive hz) (Positive bitRate) bits =
-    doutDivider (patternConfig hz bitRate bits) >= 1
+    divider (patternConfig hz bitRate bits) >= 1
 
 -- ---------------------------------------------------------------------------
 -- configDividersConsistent properties
@@ -127,35 +127,35 @@ prop_patternConfig_divider (Positive hz) (Positive bitRate) bits =
 
 -- Empty channel list is consistent
 prop_consistent_empty :: Bool
-prop_consistent_empty = configDividersConsistent defaultDigitalOutConfig
+prop_consistent_empty = configDividersConsistent defaultConfig
 
 -- All enabled channels with same divider → consistent
 prop_consistent_same :: Positive Int -> NonEmptyList Bool -> Bool
 prop_consistent_same (Positive d) (NonEmpty es) =
-    let chans = [defaultDigitalOutChannelConfig { doutEnable = e, doutDivider = d } | e <- es]
-    in configDividersConsistent defaultDigitalOutConfig { doutChannels = chans }
+    let chans = [defaultChannelConfig { enable = e, divider = d } | e <- es]
+    in configDividersConsistent defaultConfig { channels = chans }
 
 -- Single enabled channel → always consistent
 prop_consistent_single :: Positive Int -> Bool
 prop_consistent_single (Positive d) =
-    let ch  = defaultDigitalOutChannelConfig { doutEnable = True, doutDivider = d }
-        cfg = defaultDigitalOutConfig { doutChannels = [ch] }
+    let ch  = defaultChannelConfig { enable = True, divider = d }
+        cfg = defaultConfig { channels = [ch] }
     in configDividersConsistent cfg
 
 -- Two enabled channels with different dividers → inconsistent
 prop_inconsistent_different :: Property
 prop_inconsistent_different =
-    let ch0 = defaultDigitalOutChannelConfig { doutDivider = 1 }
-        ch1 = defaultDigitalOutChannelConfig { doutDivider = 2 }
-        cfg = defaultDigitalOutConfig { doutChannels = [ch0, ch1] }
+    let ch0 = defaultChannelConfig { divider = 1 }
+        ch1 = defaultChannelConfig { divider = 2 }
+        cfg = defaultConfig { channels = [ch0, ch1] }
     in property (not (configDividersConsistent cfg))
 
 -- Disabled channel with different divider does not break consistency
 prop_consistent_disabled :: Bool
 prop_consistent_disabled =
-    let chEnabled  = defaultDigitalOutChannelConfig { doutEnable = True,  doutDivider = 1 }
-        chDisabled = defaultDigitalOutChannelConfig { doutEnable = False, doutDivider = 99 }
-        cfg = defaultDigitalOutConfig { doutChannels = [chEnabled, chDisabled] }
+    let chEnabled  = defaultChannelConfig { enable = True,  divider = 1 }
+        chDisabled = defaultChannelConfig { enable = False, divider = 99 }
+        cfg = defaultConfig { channels = [chEnabled, chDisabled] }
     in configDividersConsistent cfg
 
 -- ---------------------------------------------------------------------------

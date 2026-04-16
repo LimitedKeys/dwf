@@ -51,24 +51,24 @@ defaultTriggerConfig = TriggerConfig
 -- DigitalInConfig — logic analyser acquisition configuration
 -- ---------------------------------------------------------------------------
 
-data DigitalInConfig = DigitalInConfig
-    { dinDivider      :: Int                    -- clock divider (sample rate = internal clock / divider)
-    , dinBufferSize   :: Int                    -- samples to capture
-    , dinSampleFormat :: Int                    -- bits per sample: 8, 16, or 32
-    , dinSampleMode   :: Int                    -- 0=simple, 1=noise (interleaved min/max)
-    , dinAcqMode      :: Int                    -- 0=single, 1=scan-shift, 2=scan-screen, 3=record
-    , dinTrigger      :: TriggerConfig
+data Config = Config
+    { divider      :: Int                    -- clock divider (sample rate = internal clock / divider)
+    , bufferSize   :: Int                    -- samples to capture
+    , sampleFormat :: Int                    -- bits per sample: 8, 16, or 32
+    , sampleMode   :: Int                    -- 0=simple, 1=noise (interleaved min/max)
+    , acqMode      :: Int                    -- 0=single, 1=scan-shift, 2=scan-screen, 3=record
+    , trigger      :: TriggerConfig
     } deriving (Eq, Show)
 
 -- | Single-shot capture, divider=1 (maximum rate), 4096 samples, 16-bit, immediate trigger.
-defaultDigitalInConfig :: DigitalInConfig
-defaultDigitalInConfig = DigitalInConfig
-    { dinDivider      = 1       -- maximum sample rate
-    , dinBufferSize   = 4096
-    , dinSampleFormat = 16
-    , dinSampleMode   = 0       -- simple
-    , dinAcqMode      = 0       -- single
-    , dinTrigger      = defaultTriggerConfig
+defaultConfig :: Config
+defaultConfig = Config
+    { divider      = 1       -- maximum sample rate
+    , bufferSize   = 4096
+    , sampleFormat = 16
+    , sampleMode   = 0       -- simple
+    , acqMode      = 0       -- single
+    , trigger      = defaultTriggerConfig
     }
 
 -- ---------------------------------------------------------------------------
@@ -94,15 +94,15 @@ applyTrigger hdwf trig = do
 -- Note: this is named 'setup' rather than 'configure' because 'configure'
 -- already exists in this module as the primitive that starts acquisition
 -- (FDwfDigitalInConfigure).
-setup :: Int -> DigitalInConfig -> IO (DwfResult ())
+setup :: Int -> Config -> IO (DwfResult ())
 setup hdwf cfg = do
     r0 <- reset              hdwf
-    r1 <- dividerSet         hdwf (dinDivider cfg)
-    r2 <- bufferSizeSet      hdwf (dinBufferSize cfg)
-    r3 <- sampleFormatSet    hdwf (dinSampleFormat cfg)
-    r4 <- sampleModeSet      hdwf (dinSampleMode cfg)
-    r5 <- acquisitionModeSet hdwf (dinAcqMode cfg)
-    tR <- applyTrigger       hdwf (dinTrigger cfg)
+    r1 <- dividerSet         hdwf (divider cfg)
+    r2 <- bufferSizeSet      hdwf (bufferSize cfg)
+    r3 <- sampleFormatSet    hdwf (sampleFormat cfg)
+    r4 <- sampleModeSet      hdwf (sampleMode cfg)
+    r5 <- acquisitionModeSet hdwf (acqMode cfg)
+    tR <- applyTrigger       hdwf (trigger cfg)
     return $ r0 *> r1 *> r2 *> r3 *> r4 *> r5 *> tR
 
 -- ---------------------------------------------------------------------------

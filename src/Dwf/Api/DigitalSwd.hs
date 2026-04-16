@@ -6,37 +6,37 @@ import Dwf.Dll.Wrap
 import Dwf.Dll.Access
 
 -- ---------------------------------------------------------------------------
--- SwdConfig — full bus configuration as a pure value
+-- Config — full bus configuration as a pure value
 -- ---------------------------------------------------------------------------
 
-data SwdConfig = SwdConfig
-    { swdRate    :: Double   -- clock frequency in Hz
-    , swdClkPin  :: Int      -- DIO pin for SWCLK
-    , swdIoPin   :: Int      -- DIO pin for SWDIO
-    , swdTurn    :: Int      -- turn-around clock cycles
-    , swdTrail   :: Int      -- trailing idle clock cycles
-    , swdPark    :: Int      -- park clock cycles
-    , swdNak     :: Int      -- retries on NAK
-    , swdIoIdle  :: Int      -- idle state of SWDIO: 0=low, 1=high, 2=HiZ
+data Config = Config
+    { rate    :: Double   -- clock frequency in Hz
+    , clkPin  :: Int      -- DIO pin for SWCLK
+    , ioPin   :: Int      -- DIO pin for SWDIO
+    , turn    :: Int      -- turn-around clock cycles
+    , trail   :: Int      -- trailing idle clock cycles
+    , park    :: Int      -- park clock cycles
+    , nak     :: Int      -- retries on NAK
+    , ioIdle  :: Int      -- idle state of SWDIO: 0=low, 1=high, 2=HiZ
     } deriving (Eq, Show)
 
-defaultSwdConfig :: SwdConfig
-defaultSwdConfig = SwdConfig
-    { swdRate   = 1000000   -- 1 MHz
-    , swdClkPin = 0
-    , swdIoPin  = 1
-    , swdTurn   = 1
-    , swdTrail  = 8
-    , swdPark   = 1
-    , swdNak    = 3
-    , swdIoIdle = 1         -- idle high
+defaultConfig :: Config
+defaultConfig = Config
+    { rate   = 1000000   -- 1 MHz
+    , clkPin = 0
+    , ioPin  = 1
+    , turn   = 1
+    , trail  = 8
+    , park   = 1
+    , nak    = 3
+    , ioIdle = 1         -- idle high
     }
 
 -- | Returns True if all pin assignments are distinct.
--- Use this to validate a 'SwdConfig' before passing it to 'configure'.
-configPinsDistinct :: SwdConfig -> Bool
+-- Use this to validate a 'Config' before passing it to 'configure'.
+configPinsDistinct :: Config -> Bool
 configPinsDistinct cfg = length pins == length (nub pins)
-  where pins = [swdClkPin cfg, swdIoPin cfg]
+  where pins = [clkPin cfg, ioPin cfg]
 
 -- ---------------------------------------------------------------------------
 -- Configuration
@@ -76,20 +76,20 @@ nakSet = setI1 fdwf_digital_swd_nak_set
 ioIdleSet :: Int -> Int -> IO (DwfResult ())
 ioIdleSet = setI1 fdwf_digital_swd_io_idle_set
 
--- | Apply all fields of a SwdConfig to the device in one call.
+-- | Apply all fields of a Config to the device in one call.
 -- Returns the first error encountered, or DwfResult () if all succeed.
 -- Precondition: 'configPinsDistinct' cfg — SWCLK and SWDIO must be on different pins.
-configure :: Int -> SwdConfig -> IO (DwfResult ())
+configure :: Int -> Config -> IO (DwfResult ())
 configure hdwf cfg = do
     r1 <- reset      hdwf
-    r2 <- rateSet    hdwf (swdRate cfg)
-    r3 <- ckSet      hdwf (swdClkPin cfg)
-    r4 <- ioSet      hdwf (swdIoPin cfg)
-    r5 <- turnSet    hdwf (swdTurn cfg)
-    r6 <- trailSet   hdwf (swdTrail cfg)
-    r7 <- parkSet    hdwf (swdPark cfg)
-    r8 <- nakSet     hdwf (swdNak cfg)
-    r9 <- ioIdleSet  hdwf (swdIoIdle cfg)
+    r2 <- rateSet    hdwf (rate cfg)
+    r3 <- ckSet      hdwf (clkPin cfg)
+    r4 <- ioSet      hdwf (ioPin cfg)
+    r5 <- turnSet    hdwf (turn cfg)
+    r6 <- trailSet   hdwf (trail cfg)
+    r7 <- parkSet    hdwf (park cfg)
+    r8 <- nakSet     hdwf (nak cfg)
+    r9 <- ioIdleSet  hdwf (ioIdle cfg)
     return $ r1 *> r2 *> r3 *> r4 *> r5 *> r6 *> r7 *> r8 *> r9
 
 -- | Send a line reset sequence. Arguments are the number of reset clock

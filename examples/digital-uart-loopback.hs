@@ -18,9 +18,9 @@ main = with 0 $ \hdwf -> do
     putStrLn "Device open."
     putStrLn "Connect DIO 0 (TX) to DIO 1 (RX) for loopback."
 
-    let cfg = UART.defaultUartConfig
-                { UART.uartTxPin = 0
-                , UART.uartRxPin = 1
+    let cfg = UART.defaultConfig
+                { UART.txPin = 0
+                , UART.rxPin = 1
                 }
         msg = BC.pack "Hello, UART!"
 

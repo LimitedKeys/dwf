@@ -74,37 +74,37 @@ spiIdleFromInt 3 = Just IdleZet
 spiIdleFromInt _ = Nothing
 
 -- ---------------------------------------------------------------------------
--- SpiConfig — full bus configuration as a pure value
+-- Config — full bus configuration as a pure value
 -- ---------------------------------------------------------------------------
 
-data SpiConfig = SpiConfig
-    { spiFrequency :: Double    -- clock frequency in Hz
-    , spiMode      :: SpiMode
-    , spiBitOrder  :: BitOrder
-    , spiClockPin  :: Int       -- DIO channel index for CLK
-    , spiMosiPin   :: Int       -- DIO channel index for MOSI (DQ0)
-    , spiMisoPin   :: Int       -- DIO channel index for MISO (DQ1)
-    , spiCsPin     :: Int       -- DIO channel index for chip select
-    , spiCsIdle    :: Int       -- idle level of CS: 0=low, 1=high (active-low = 1)
+data Config = Config
+    { frequency :: Double    -- clock frequency in Hz
+    , mode      :: SpiMode
+    , bitOrder  :: BitOrder
+    , clockPin  :: Int       -- DIO channel index for CLK
+    , mosiPin   :: Int       -- DIO channel index for MOSI (DQ0)
+    , misoPin   :: Int       -- DIO channel index for MISO (DQ1)
+    , csPin     :: Int       -- DIO channel index for chip select
+    , csIdle    :: Int       -- idle level of CS: 0=low, 1=high (active-low = 1)
     } deriving (Eq, Show)
 
-defaultSpiConfig :: SpiConfig
-defaultSpiConfig = SpiConfig
-    { spiFrequency = 1000000   -- 1 MHz
-    , spiMode      = Mode0
-    , spiBitOrder  = MsbFirst
-    , spiClockPin  = 0
-    , spiMosiPin   = 1
-    , spiMisoPin   = 2
-    , spiCsPin     = 3
-    , spiCsIdle    = 1         -- active-low CS (idle high)
+defaultConfig :: Config
+defaultConfig = Config
+    { frequency = 1000000   -- 1 MHz
+    , mode      = Mode0
+    , bitOrder  = MsbFirst
+    , clockPin  = 0
+    , mosiPin   = 1
+    , misoPin   = 2
+    , csPin     = 3
+    , csIdle    = 1         -- active-low CS (idle high)
     }
 
 -- | Returns True if all pin assignments are distinct.
--- Use this to validate an 'SpiConfig' before passing it to 'configure'.
-configPinsDistinct :: SpiConfig -> Bool
+-- Use this to validate a 'Config' before passing it to 'configure'.
+configPinsDistinct :: Config -> Bool
 configPinsDistinct cfg = length pins == length (nub pins)
-  where pins = [spiClockPin cfg, spiMosiPin cfg, spiMisoPin cfg, spiCsPin cfg]
+  where pins = [clockPin cfg, mosiPin cfg, misoPin cfg, csPin cfg]
 
 -- ---------------------------------------------------------------------------
 -- Configuration
@@ -154,21 +154,21 @@ select :: Int -> Int -> Int -> IO (DwfResult ())
 select = setI2 fdwf_digital_spi_select
 
 -- ---------------------------------------------------------------------------
--- Configure from SpiConfig
+-- Configure from Config
 -- ---------------------------------------------------------------------------
 
--- | Apply all fields of an SpiConfig to the device in one call.
+-- | Apply all fields of a Config to the device in one call.
 -- Returns the first error encountered, or DwfResult () if all succeed.
 -- Precondition: 'configPinsDistinct' cfg — CLK, MOSI, MISO and CS must all be on different pins.
-configure :: Int -> SpiConfig -> IO (DwfResult ())
+configure :: Int -> Config -> IO (DwfResult ())
 configure hdwf cfg = do
-    r1 <- frequencySet hdwf (spiFrequency cfg)
-    r2 <- modeSet      hdwf (spiMode cfg)
-    r3 <- orderSet     hdwf (spiBitOrder cfg)
-    r4 <- clockSet     hdwf (spiClockPin cfg)
-    r5 <- dataSet      hdwf 0 (spiMosiPin cfg)
-    r6 <- dataSet      hdwf 1 (spiMisoPin cfg)
-    r7 <- selectSet    hdwf (spiCsPin cfg) (spiCsIdle cfg)
+    r1 <- frequencySet hdwf (frequency cfg)
+    r2 <- modeSet      hdwf (mode cfg)
+    r3 <- orderSet     hdwf (bitOrder cfg)
+    r4 <- clockSet     hdwf (clockPin cfg)
+    r5 <- dataSet      hdwf 0 (mosiPin cfg)
+    r6 <- dataSet      hdwf 1 (misoPin cfg)
+    r7 <- selectSet    hdwf (csPin cfg) (csIdle cfg)
     return $ r1 *> r2 *> r3 *> r4 *> r5 *> r6 *> r7
 
 -- ---------------------------------------------------------------------------

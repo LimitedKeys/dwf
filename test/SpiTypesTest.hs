@@ -2,7 +2,7 @@
 module SpiTypesTest (spiTests) where
 
 import Data.Bits (testBit)
-import Test.QuickCheck
+import Test.QuickCheck hiding (frequency)
 
 import Dwf.Api.DigitalSpi
 
@@ -76,18 +76,18 @@ prop_spiIdle_rejectInvalid n =
 -- ---------------------------------------------------------------------------
 
 prop_defaultConfig_frequency :: Bool
-prop_defaultConfig_frequency = spiFrequency defaultSpiConfig > 0
+prop_defaultConfig_frequency = frequency defaultConfig > 0
 
 prop_defaultConfig_validMode :: Bool
 prop_defaultConfig_validMode =
-    spiModeFromInt (spiModeToInt (spiMode defaultSpiConfig)) == Just (spiMode defaultSpiConfig)
+    spiModeFromInt (spiModeToInt (mode defaultConfig)) == Just (mode defaultConfig)
 
 prop_defaultConfig_validBitOrder :: Bool
 prop_defaultConfig_validBitOrder =
-    bitOrderFromInt (bitOrderToInt (spiBitOrder defaultSpiConfig)) == Just (spiBitOrder defaultSpiConfig)
+    bitOrderFromInt (bitOrderToInt (bitOrder defaultConfig)) == Just (bitOrder defaultConfig)
 
 prop_defaultConfig_pinsDistinct :: Bool
-prop_defaultConfig_pinsDistinct = configPinsDistinct defaultSpiConfig
+prop_defaultConfig_pinsDistinct = configPinsDistinct defaultConfig
 
 -- ---------------------------------------------------------------------------
 -- Test list

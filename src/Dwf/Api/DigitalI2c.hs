@@ -7,33 +7,33 @@ import Dwf.Dll.Wrap
 import Dwf.Dll.Access
 
 -- ---------------------------------------------------------------------------
--- I2cConfig — full bus configuration as a pure value
+-- Config — full bus configuration as a pure value
 -- ---------------------------------------------------------------------------
 
-data I2cConfig = I2cConfig
-    { i2cRate     :: Double   -- clock frequency in Hz
-    , i2cStretch  :: Int      -- clock stretching: 0=off, 1=on
-    , i2cReadNak  :: Int      -- NAK on read: 0=NAK last byte, 1=NAK all
-    , i2cSclPin   :: Int      -- DIO pin for SCL
-    , i2cSdaPin   :: Int      -- DIO pin for SDA
-    , i2cTimeout  :: Double   -- bus timeout in seconds; 0 = disabled
+data Config = Config
+    { rate     :: Double   -- clock frequency in Hz
+    , stretch  :: Int      -- clock stretching: 0=off, 1=on
+    , readNak  :: Int      -- NAK on read: 0=NAK last byte, 1=NAK all
+    , sclPin   :: Int      -- DIO pin for SCL
+    , sdaPin   :: Int      -- DIO pin for SDA
+    , timeout  :: Double   -- bus timeout in seconds; 0 = disabled
     } deriving (Eq, Show)
 
-defaultI2cConfig :: I2cConfig
-defaultI2cConfig = I2cConfig
-    { i2cRate    = 100000   -- 100 kHz standard mode
-    , i2cStretch = 1        -- clock stretching on
-    , i2cReadNak = 0        -- NAK only the last byte
-    , i2cSclPin  = 0
-    , i2cSdaPin  = 1
-    , i2cTimeout = 0.0      -- disabled
+defaultConfig :: Config
+defaultConfig = Config
+    { rate    = 100000   -- 100 kHz standard mode
+    , stretch = 1        -- clock stretching on
+    , readNak = 0        -- NAK only the last byte
+    , sclPin  = 0
+    , sdaPin  = 1
+    , timeout = 0.0      -- disabled
     }
 
 -- | Returns True if all pin assignments are distinct.
--- Use this to validate an 'I2cConfig' before passing it to 'configure'.
-configPinsDistinct :: I2cConfig -> Bool
+-- Use this to validate a 'Config' before passing it to 'configure'.
+configPinsDistinct :: Config -> Bool
 configPinsDistinct cfg = length pins == length (nub pins)
-  where pins = [i2cSclPin cfg, i2cSdaPin cfg]
+  where pins = [sclPin cfg, sdaPin cfg]
 
 -- ---------------------------------------------------------------------------
 -- Configuration
@@ -68,18 +68,18 @@ sdaSet = setI1 fdwf_digital_i2c_sda_set
 timeoutSet :: Int -> Double -> IO (DwfResult ())
 timeoutSet = setD1 fdwf_digital_i2c_timeout_set
 
--- | Apply all fields of an I2cConfig to the device in one call.
+-- | Apply all fields of a Config to the device in one call.
 -- Returns the first error encountered, or DwfResult () if all succeed.
 -- Precondition: 'configPinsDistinct' cfg — SCL and SDA must be on different pins.
-configure :: Int -> I2cConfig -> IO (DwfResult ())
+configure :: Int -> Config -> IO (DwfResult ())
 configure hdwf cfg = do
     r1 <- reset      hdwf
-    r2 <- stretchSet hdwf (i2cStretch cfg)
-    r3 <- rateSet    hdwf (i2cRate cfg)
-    r4 <- readNakSet hdwf (i2cReadNak cfg)
-    r5 <- sclSet     hdwf (i2cSclPin cfg)
-    r6 <- sdaSet     hdwf (i2cSdaPin cfg)
-    r7 <- timeoutSet hdwf (i2cTimeout cfg)
+    r2 <- stretchSet hdwf (stretch cfg)
+    r3 <- rateSet    hdwf (rate cfg)
+    r4 <- readNakSet hdwf (readNak cfg)
+    r5 <- sclSet     hdwf (sclPin cfg)
+    r6 <- sdaSet     hdwf (sdaPin cfg)
+    r7 <- timeoutSet hdwf (timeout cfg)
     return $ r1 *> r2 *> r3 *> r4 *> r5 *> r6 *> r7
 
 -- ---------------------------------------------------------------------------

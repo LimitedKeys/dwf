@@ -19,9 +19,9 @@ main :: IO ()
 main = with 0 $ \hdwf -> do
     putStrLn "Device open."
 
-    let cfg = DIO.defaultDigitalIOConfig
-                { DIO.dioOutputEnable = 0x0F   -- DIO 0-3 as outputs
-                , DIO.dioOutput       = 0x05   -- 0b0101: DIO 0 and 2 high
+    let cfg = DIO.defaultConfig
+                { DIO.outputEnable = 0x0F   -- DIO 0-3 as outputs
+                , DIO.output       = 0x05   -- 0b0101: DIO 0 and 2 high
                 }
 
     r1 <- DIO.setup hdwf cfg
@@ -37,8 +37,8 @@ main = with 0 $ \hdwf -> do
                     case inp of
                         DwfError n -> putStrLn $ "inputStatus failed: error " <> show n
                         DwfResult mask -> do
-                            printf "Output enable : 0x%02X\n" (DIO.dioOutputEnable cfg)
-                            printf "Output value  : 0x%02X\n" (DIO.dioOutput cfg)
+                            printf "Output enable : 0x%02X\n" (DIO.outputEnable cfg)
+                            printf "Output value  : 0x%02X\n" (DIO.output cfg)
                             printf "Input status  : 0x%02X\n" mask
                             printf "\n  Pin:"
                             mapM_ (printf "%4d") ([7, 6..0] :: [Int])

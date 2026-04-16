@@ -36,8 +36,8 @@ main = with 0 $ \hdwf -> do
                     , DIn.trigEdgeRise = 1   -- bit 0 = DIO 0 rising edge
                     }
 
-        cfg = DIn.defaultDigitalInConfig
-                    { DIn.dinTrigger = trig }
+        cfg = DIn.defaultConfig
+                    { DIn.trigger = trig }
 
     r1 <- DIn.setup hdwf cfg
     case r1 of
@@ -52,7 +52,7 @@ main = with 0 $ \hdwf -> do
                     putStrLn "Triggered. Reading samples..."
 
                     -- statusData takes a byte count; 16-bit format = 2 bytes per sample
-                    let bufBytes = dinBufferSize cfg * (dinSampleFormat cfg `div` 8)
+                    let bufBytes = bufSize cfg * (sampFmt cfg `div` 8)
                     result <- DIn.statusData hdwf bufBytes
 
                     case result of
@@ -64,8 +64,8 @@ main = with 0 $ \hdwf -> do
                                 ("DIO2" :: String) ("DIO3" :: String)
                             mapM_ printSample (take 20 xs)
   where
-    dinBufferSize   = DIn.dinBufferSize
-    dinSampleFormat = DIn.dinSampleFormat
+    bufSize  = DIn.bufferSize
+    sampFmt  = DIn.sampleFormat
 
     printSample s = printf "  %4d  %4d  %4d  %4d\n"
         (b s 0) (b s 1) (b s 2) (b s 3)
