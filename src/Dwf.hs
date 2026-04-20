@@ -8,7 +8,7 @@ import Control.Exception (bracket)
 import Control.Monad (when, forM_, void)
 import Text.Printf (printf)
 
-import Dwf.Dll.Access (fromResult, DwfResult(..))
+import Dwf.Dll.Access (fromResult, errors, results, DwfResult(..))
 import qualified Dwf.Api.Device as D
 
 -- ---------------------------------------------------------------------------
