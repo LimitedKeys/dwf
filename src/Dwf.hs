@@ -2,6 +2,9 @@
 module Dwf
     ( module Dwf
     , DwfResult(..)
+    , fromResult
+    , errors
+    , results
     ) where
 
 import Control.Exception (bracket)
