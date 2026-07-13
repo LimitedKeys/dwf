@@ -115,15 +115,15 @@ _convert _ _ _ (DwfError e) = return (DwfError e)
 _convert samples resultArray c_result (DwfResult sample_format) = case sample_format of
     8 -> do
         value <- peekArray samples (castPtr resultArray) :: IO [CUChar]
-        return $ check (fromIntegral c_result, map fromIntegral value)
+        return $ check (fromIntegral c_result, reverse $ map fromIntegral value)
     16 -> do
         let mySamples = fromIntegral samples `div` 2
         value <- peekArray mySamples (castPtr resultArray) :: IO [CUShort]
-        return $ check (fromIntegral c_result, map fromIntegral value)
+        return $ check (fromIntegral c_result, reverse $ map fromIntegral value)
     _ -> do
         let mySamples = fromIntegral samples `div` 4
         value <- peekArray mySamples (castPtr resultArray) :: IO [CUInt]
-        return $ check (fromIntegral c_result, map fromIntegral value)
+        return $ check (fromIntegral c_result, reverse $ map fromIntegral value)
 
 _xData :: (CInt -> Ptr () -> CInt -> IO CInt) -> Int -> Int -> IO (DwfResult [Int])
 _xData f hdwf samples = do
